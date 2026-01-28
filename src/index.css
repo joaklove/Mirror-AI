@@ -1,0 +1,165 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 252 35% 8%;
+    --foreground: 250 20% 95%;
+
+    --card: 252 30% 12%;
+    --card-foreground: 250 20% 95%;
+
+    --popover: 252 30% 12%;
+    --popover-foreground: 250 20% 95%;
+
+    --primary: 263 70% 65%;
+    --primary-foreground: 250 20% 95%;
+
+    --secondary: 252 25% 18%;
+    --secondary-foreground: 250 20% 95%;
+
+    --muted: 252 25% 18%;
+    --muted-foreground: 250 10% 60%;
+
+    --accent: 263 70% 65%;
+    --accent-foreground: 250 20% 95%;
+
+    --destructive: 0 62.8% 50%;
+    --destructive-foreground: 250 20% 95%;
+
+    --border: 252 20% 22%;
+    --input: 252 20% 22%;
+    --ring: 263 70% 65%;
+
+    --radius: 0.75rem;
+
+    --gradient-primary: linear-gradient(135deg, hsl(263 70% 65%) 0%, hsl(252 65% 55%) 100%);
+    --gradient-subtle: linear-gradient(180deg, hsl(252 35% 8%) 0%, hsl(252 35% 10%) 100%);
+    --shadow-glow: 0 0 40px hsl(263 70% 65% / 0.3);
+    --shadow-card: 0 4px 20px hsl(252 35% 5% / 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply text-foreground;
+    background: #020617; /* slate-950 */
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Ambient Light Blob 1 - Top Left (Rose) */
+  body::before {
+    content: '';
+    position: fixed;
+    top: -30%;
+    left: -20%;
+    width: 800px;
+    height: 800px;
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.4) 0%, transparent 70%);
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    animation: float 20s ease-in-out infinite;
+  }
+
+  /* Ambient Light Blob 2 - Bottom Right (Amber) */
+  body::after {
+    content: '';
+    position: fixed;
+    bottom: -30%;
+    right: -20%;
+    width: 900px;
+    height: 900px;
+    background: radial-gradient(circle, rgba(217, 119, 6, 0.35) 0%, transparent 70%);
+    filter: blur(140px);
+    pointer-events: none;
+    z-index: 0;
+    animation: float 25s ease-in-out infinite reverse;
+  }
+
+  /* Additional Ambient Light Blob 3 - Center Right (Orange) */
+  body {
+    position: relative;
+  }
+
+  body > #root::before {
+    content: '';
+    position: fixed;
+    top: 40%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.3) 0%, transparent 70%);
+    filter: blur(100px);
+    pointer-events: none;
+    z-index: 0;
+    animation: float 18s ease-in-out infinite;
+  }
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.05);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 30px rgba(244, 63, 94, 0.4), 0 0 60px rgba(244, 63, 94, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(244, 63, 94, 0.6), 0 0 80px rgba(244, 63, 94, 0.3);
+  }
+}
+
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite linear;
+  background: linear-gradient(90deg, transparent, rgba(244, 63, 94, 0.1), transparent);
+  background-size: 1000px 100%;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-breathe {
+  animation: breathe 2s ease-in-out infinite;
+}

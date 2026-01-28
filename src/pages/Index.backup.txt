@@ -1,0 +1,3 @@
+// This is a marker file to help with recovery
+// The actual Index.tsx needs to be restored from git
+// Run: git checkout c255b2c -- src/pages/Index.tsx
