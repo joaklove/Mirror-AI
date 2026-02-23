@@ -1,0 +1,78 @@
+<view class="container">
+  <!-- 用户信息卡片 -->
+  <view class="user-card">
+    <view class="user-avatar">
+      <image src="{{userInfo.avatar || '../../assets/avatar-default.png'}}" mode="aspectFill"></image>
+    </view>
+    <view class="user-info">
+      <text class="user-name">{{userInfo.nickName || '用户'}}</text>
+      <text class="user-slogan">照见内心，洞察自我</text>
+    </view>
+  </view>
+
+  <!-- 快捷操作 -->
+  <view class="quick-actions">
+    <view class="action-item" bindtap="goToJournal">
+      <view class="action-icon">
+        <image src="../../assets/icon-add.png" mode="aspectFill"></image>
+      </view>
+      <text class="action-text">写日记</text>
+    </view>
+    <view class="action-item" bindtap="goToAnalysis">
+      <view class="action-icon">
+        <image src="../../assets/icon-chart.png" mode="aspectFill"></image>
+      </view>
+      <text class="action-text">查看分析</text>
+    </view>
+    <view class="action-item" bindtap="goToSettings">
+      <view class="action-icon">
+        <image src="../../assets/icon-settings.png" mode="aspectFill"></image>
+      </view>
+      <text class="action-text">设置</text>
+    </view>
+  </view>
+
+  <!-- 最近日记 -->
+  <view class="recent-journal">
+    <view class="section-header">
+      <text class="section-title">最近日记</text>
+      <text class="section-more" bindtap="goToJournal">查看更多</text>
+    </view>
+    <view class="journal-list">
+      <block wx:for="{{recentJournals}}" wx:key="id">
+        <view class="journal-item" bindtap="viewJournalDetail" data-id="{{item.id}}">
+          <text class="journal-content">{{item.content}}</text>
+          <view class="journal-meta">
+            <text class="journal-time">{{formatTime(item.timestamp)}}</text>
+            <view class="journal-tags">
+              <block wx:for="{{item.tags}}" wx:key="*this">
+                <view class="journal-tag">{{item}}</view>
+              </block>
+            </view>
+          </view>
+        </view>
+      </block>
+      <view wx:if="{{recentJournals.length === 0}}" class="empty-state">
+        <text>还没有日记，开始写第一篇吧</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 心情统计 -->
+  <view class="mood-stats">
+    <view class="section-header">
+      <text class="section-title">心情统计</text>
+    </view>
+    <view class="mood-chart">
+      <block wx:for="{{moodStats}}" wx:key="mood">
+        <view class="mood-item">
+          <text class="mood-label">{{item.mood}}</text>
+          <view class="mood-bar">
+            <view class="mood-bar-fill" style="width: {{item.percentage}}%"></view>
+          </view>
+          <text class="mood-count">{{item.count}}</text>
+        </view>
+      </block>
+    </view>
+  </view>
+</view>

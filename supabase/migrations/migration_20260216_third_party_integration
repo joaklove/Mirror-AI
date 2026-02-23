@@ -1,0 +1,116 @@
+-- 创建第三方服务表
+CREATE TABLE IF NOT EXISTS third_party_services (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('health', 'financial', 'learning', 'work', 'smart_home')),
+  provider TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('disconnected', 'connecting', 'connected', 'error')),
+  access_token TEXT,
+  refresh_token TEXT,
+  expires_at BIGINT,
+  user_id TEXT NOT NULL REFERENCES auth.users(id),
+  metadata JSONB,
+  connected_at TIMESTAMP WITH TIME ZONE,
+  last_sync_at TIMESTAMP WITH TIME ZONE,
+  error_message TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建同步任务表
+CREATE TABLE IF NOT EXISTS sync_tasks (
+  id TEXT PRIMARY KEY,
+  service_id TEXT NOT NULL REFERENCES third_party_services(id),
+  service_name TEXT NOT NULL,
+  service_type TEXT NOT NULL CHECK (service_type IN ('health', 'financial', 'learning', 'work', 'smart_home')),
+  user_id TEXT NOT NULL REFERENCES auth.users(id),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
+  started_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  completed_at TIMESTAMP WITH TIME ZONE,
+  error_message TEXT,
+  sync_data JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建智能家居设备表
+CREATE TABLE IF NOT EXISTS smart_home_devices (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES auth.users(id),
+  name TEXT NOT NULL,
+  type TEXT NOT NULL,
+  location TEXT,
+  status BOOLEAN DEFAULT FALSE,
+  power BOOLEAN DEFAULT FALSE,
+  brightness INTEGER,
+  temperature FLOAT,
+  volume INTEGER,
+  last_updated TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 创建索引
+CREATE INDEX IF NOT EXISTS idx_third_party_services_user_id ON third_party_services(user_id);
+CREATE INDEX IF NOT EXISTS idx_third_party_services_type ON third_party_services(type);
+CREATE INDEX IF NOT EXISTS idx_third_party_services_status ON third_party_services(status);
+CREATE INDEX IF NOT EXISTS idx_sync_tasks_service_id ON sync_tasks(service_id);
+CREATE INDEX IF NOT EXISTS idx_sync_tasks_user_id ON sync_tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_sync_tasks_status ON sync_tasks(status);
+CREATE INDEX IF NOT EXISTS idx_smart_home_devices_user_id ON smart_home_devices(user_id);
+CREATE INDEX IF NOT EXISTS idx_smart_home_devices_type ON smart_home_devices(type);
+CREATE INDEX IF NOT EXISTS idx_smart_home_devices_status ON smart_home_devices(status);
+
+-- 启用行级安全策略
+ALTER TABLE third_party_services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sync_tasks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE smart_home_devices ENABLE ROW LEVEL SECURITY;
+
+-- 创建行级安全策略
+CREATE POLICY "Users can view their own third party services" ON third_party_services
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own third party services" ON third_party_services
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update their own third party services" ON third_party_services
+  FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete their own third party services" ON third_party_services
+  FOR DELETE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can view their own sync tasks" ON sync_tasks
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own sync tasks" ON sync_tasks
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can view their own smart home devices" ON smart_home_devices
+  FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert their own smart home devices" ON smart_home_devices
+  FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update their own smart home devices" ON smart_home_devices
+  FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete their own smart home devices" ON smart_home_devices
+  FOR DELETE USING (user_id = auth.uid());
+
+-- 创建函数：更新updated_at字段
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 创建触发器
+CREATE TRIGGER update_third_party_services_updated_at
+  BEFORE UPDATE ON third_party_services
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_smart_home_devices_updated_at
+  BEFORE UPDATE ON smart_home_devices
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();

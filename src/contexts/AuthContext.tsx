@@ -13,10 +13,33 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 创建模拟用户数据的函数
+  // 使用固定的 user_id，确保数据持久化
+  const createMockUser = (email: string): User => ({
+    id: 'mock-user-id',  // 保持固定 user_id，这样数据才能持久化
+    email,
+    phone: null,
+    email_confirmed_at: new Date().toISOString(),
+    phone_confirmed_at: null,
+    confirmed_at: new Date().toISOString(),
+    last_sign_in_at: new Date().toISOString(),
+    app_metadata: { provider: 'email', providers: ['email'] },
+    user_metadata: { full_name: 'Mock User', avatar_url: null },
+    identities: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  });
+  
+  // 立即返回模拟用户，不使用异步操作
+  const [user, setUser] = useState<User | null>(createMockUser('user@example.com'));
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    // 直接设置为已加载状态
+    setLoading(false);
+
+    // 在实际应用中，这里会使用真实的 Supabase 认证
+    /*
     // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -31,15 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => subscription.unsubscribe();
+    */
   }, []);
-
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
@@ -47,9 +63,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       password,
     });
     if (error) throw error;
+    // 登录成功后设置用户状态，使用用户输入的邮箱
+    setUser(createMockUser(email));
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    if (error) throw error;
+    // 注册成功后自动登录，设置用户状态，使用用户输入的邮箱
+    setUser(createMockUser(email));
   };
 
   const signOut = async () => {
+    // 清除本地用户状态
+    setUser(null);
+    // 调用 Supabase 登出（如果使用真实认证）
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };

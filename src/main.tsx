@@ -5,7 +5,6 @@ import { AuthProvider } from './contexts/AuthContext';
 import App from './App.tsx';
 import './index.css';
 
-// PostHog 配置
 const POSTHOG_KEY = import.meta.env.VITE_PUBLIC_POSTHOG_KEY || 'phc_q9ZcLd7BFuHd58czP2daIfpY9y9sl3Z5MsjlNFYhH5W';
 const POSTHOG_HOST = import.meta.env.VITE_PUBLIC_POSTHOG_HOST || 'https://eu.i.posthog.com';
 
@@ -17,9 +16,7 @@ const posthogOptions = {
   autocapture: true,
 };
 
-// 条件渲染：只有当 PostHog Key 存在时才启用 PostHog
 const AppWithProviders = () => {
-  // 如果 PostHog Key 存在，使用 PostHogProvider 包裹
   if (POSTHOG_KEY) {
     return (
       <PostHogProvider apiKey={POSTHOG_KEY} options={posthogOptions}>
@@ -30,7 +27,6 @@ const AppWithProviders = () => {
     );
   }
 
-  // 如果没有 PostHog Key，直接渲染 App
   return (
     <AuthProvider>
       <App />

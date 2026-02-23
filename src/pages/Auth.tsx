@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/card';
 import { Sparkles, Loader2 } from 'lucide-react';
 import { AuthEvents } from '@/utils/analytics';
 import { PostHogAuthEvents } from '@/utils/posthog';
+import { InkBackground } from '@/components/InkBackground';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -17,23 +18,43 @@ const Auth = () => {
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 6) {
+      return '密码至少需要6个字符';
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!validateEmail(email)) {
+      setError('请输入有效的邮箱地址');
+      return;
+    }
+
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+
     setLoading(true);
 
     try {
       if (isLogin) {
         await signIn(email, password);
-        // GA 追踪：用户登录
         AuthEvents.signIn('email');
-        // PostHog 追踪：用户登录
         PostHogAuthEvents.signIn('email');
       } else {
         await signUp(email, password);
-        // GA 追踪：用户注册
         AuthEvents.signUp('email');
-        // PostHog 追踪：用户注册
         PostHogAuthEvents.signUp('email');
       }
       navigate('/');
@@ -47,52 +68,59 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 relative">
-      {/* Background with ambient light */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute top-[-30%] left-[-20%] w-[800px] h-[800px] bg-[radial-gradient(circle,_rgba(244,63,94,0.4)_0%,_transparent_70%)] blur-[120px] animate-float" />
-        <div className="absolute bottom-[-30%] right-[-20%] w-[900px] h-[900px] bg-[radial-gradient(circle,_rgba(217,119,6,0.35)_0%,_transparent_70%)] blur-[140px] animate-float" style={{ animationDelay: '0s', animationDirection: 'reverse' }} />
-      </div>
-
-      <Card className="w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-rose-500/20 shadow-2xl p-8">
-        {/* Header */}
+      <InkBackground intensity="light" />
+      
+      <Card className="dao-card w-full max-w-md p-8 relative z-10">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Sparkles className="w-8 h-8 text-rose-400" />
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-rose-400 to-orange-400 bg-clip-text text-transparent">
-              Mirror AI
+            <Sparkles className="w-8 h-8" style={{ color: 'hsl(var(--cinnabar))' }} />
+            <h1 
+              className="text-3xl font-bold"
+              style={{ 
+                fontFamily: 'var(--font-serif)',
+                color: 'hsl(var(--ink-green))',
+              }}
+            >
+              心镜 AI
             </h1>
           </div>
-          <p className="text-gray-400 text-sm">记录当下，照见内心</p>
+          <p 
+            className="text-sm"
+            style={{ color: 'hsl(var(--mountain-green))' }}
+          >
+            照见内心 · 道法自然
+          </p>
         </div>
 
-        {/* Tab Switch */}
-        <div className="flex gap-2 mb-6 p-1 bg-slate-900/50 rounded-lg">
+        <div className="flex gap-2 mb-6 p-1 rounded-lg animate-fade-in-up" style={{ background: 'hsl(var(--paper-yellow))' }}>
           <button
             onClick={() => setIsLogin(true)}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-              isLogin
-                ? 'bg-gradient-to-r from-rose-500 to-orange-600 text-white'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
+            className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+            style={{
+              background: isLogin ? 'hsl(var(--cinnabar))' : 'transparent',
+              color: isLogin ? 'white' : 'hsl(var(--mountain-green))',
+            }}
           >
             登录
           </button>
           <button
             onClick={() => setIsLogin(false)}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-              !isLogin
-                ? 'bg-gradient-to-r from-rose-500 to-orange-600 text-white'
-                : 'text-gray-400 hover:text-gray-200'
-            }`}
+            className="flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all"
+            style={{
+              background: !isLogin ? 'hsl(var(--cinnabar))' : 'transparent',
+              color: !isLogin ? 'white' : 'hsl(var(--mountain-green))',
+            }}
           >
             注册
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-300 mb-2 block">
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <label 
+              className="text-sm font-medium mb-2 block"
+              style={{ color: 'hsl(var(--ink-green))' }}
+            >
               邮箱
             </label>
             <Input
@@ -101,12 +129,15 @@ const Auth = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               required
-              className="bg-slate-900/50 border-gray-700 text-gray-200 placeholder:text-gray-500"
+              className="dao-input"
             />
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-300 mb-2 block">
+          <div className="animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
+            <label 
+              className="text-sm font-medium mb-2 block"
+              style={{ color: 'hsl(var(--ink-green))' }}
+            >
               密码
             </label>
             <Input
@@ -116,15 +147,27 @@ const Auth = () => {
               placeholder="••••••••"
               required
               minLength={6}
-              className="bg-slate-900/50 border-gray-700 text-gray-200 placeholder:text-gray-500"
+              className="dao-input"
             />
             {!isLogin && (
-              <p className="text-xs text-gray-500 mt-1">密码至少 6 位</p>
+              <p 
+                className="text-xs mt-1"
+                style={{ color: 'hsl(var(--smoke-gray))' }}
+              >
+                密码至少 6 位
+              </p>
             )}
           </div>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-sm text-red-300">
+            <div 
+              className="rounded-lg p-3 text-sm animate-fade-in-up"
+              style={{ 
+                background: 'hsla(350,60%,50%,0.1)',
+                border: '1px solid hsla(350,60%,50%,0.3)',
+                color: 'hsl(350,60%,50%)',
+              }}
+            >
               {error}
             </div>
           )}
@@ -132,7 +175,8 @@ const Auth = () => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-rose-500 to-orange-600 hover:from-rose-400 hover:to-orange-500 text-white h-11"
+            className="btn-primary w-full h-11 animate-fade-in-up"
+            style={{ animationDelay: '0.3s' }}
           >
             {loading ? (
               <>
@@ -145,18 +189,41 @@ const Auth = () => {
           </Button>
         </form>
 
-        {/* Footer */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          {isLogin ? '还没有账号？' : '已有账号？'}
+        <div 
+          className="mt-6 text-center text-sm animate-fade-in-up"
+          style={{ animationDelay: '0.4s' }}
+        >
+          <span style={{ color: 'hsl(var(--smoke-gray))' }}>
+            {isLogin ? '还没有账号？' : '已有账号？'}
+          </span>
           <button
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
             }}
-            className="text-rose-400 hover:text-rose-300 ml-1 font-medium"
+            className="ml-1 font-medium transition-colors"
+            style={{ color: 'hsl(var(--cinnabar))' }}
           >
             {isLogin ? '立即注册' : '去登录'}
           </button>
+        </div>
+
+        <div 
+          className="mt-8 text-center animate-fade-in-up"
+          style={{ animationDelay: '0.5s' }}
+        >
+          <p 
+            className="text-sm italic"
+            style={{ color: 'hsl(var(--smoke-gray))' }}
+          >
+            「知人者智，自知者明」
+          </p>
+          <p 
+            className="text-xs mt-1"
+            style={{ color: 'hsl(var(--smoke-gray))', opacity: 0.7 }}
+          >
+            ——《道德经》
+          </p>
         </div>
       </Card>
     </div>

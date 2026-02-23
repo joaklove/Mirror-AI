@@ -1,0 +1,489 @@
+/* ============================================
+   心镜 AI - 「云水禅心」设计系统
+   融合道系、柔和、国风、高级元素
+   ============================================ */
+
+/* 字体导入 */
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Source+Sans+3:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================
+   CSS 变量定义
+   ============================================ */
+@layer base {
+  :root {
+    /* 主色调 */
+    --ink-green: 168 22% 21%;        /* #2C3E3A 墨青 */
+    --mountain-green: 168 16% 42%;   /* #5B7C76 远山青 */
+    --cloud-white: 40 20% 98%;       /* #FAFAF7 云母白 */
+    --paper-yellow: 36 27% 94%;      /* #F5F0E8 宣纸黄 */
+    
+    /* 辅助色 */
+    --cinnabar: 9 52% 53%;           /* #C45C48 朱砂 */
+    --stone-green: 108 23% 33%;      /* #4A6741 石青 */
+    --light-ink: 36 14% 89%;         /* #E8E4DC 淡墨 */
+    --smoke-gray: 30 4% 59%;         /* #9A9590 烟灰 */
+    
+    /* shadcn 变量映射 */
+    --background: var(--cloud-white);
+    --foreground: var(--ink-green);
+    
+    --card: var(--paper-yellow);
+    --card-foreground: var(--ink-green);
+    
+    --popover: var(--cloud-white);
+    --popover-foreground: var(--ink-green);
+    
+    --primary: var(--cinnabar);
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: var(--paper-yellow);
+    --secondary-foreground: var(--ink-green);
+    
+    --muted: var(--light-ink);
+    --muted-foreground: var(--smoke-gray);
+    
+    --accent: var(--mountain-green);
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: var(--cinnabar);
+    --destructive-foreground: 0 0% 100%;
+    
+    --border: var(--light-ink);
+    --input: var(--light-ink);
+    --ring: var(--mountain-green);
+    
+    --radius: 1rem;
+    
+    /* 阴影 */
+    --shadow-subtle: 0 2px 8px hsla(168, 22%, 21%, 0.06);
+    --shadow-soft: 0 4px 16px hsla(168, 22%, 21%, 0.08);
+    --shadow-elevated: 0 8px 32px hsla(168, 22%, 21%, 0.12);
+    
+    /* 字体 */
+    --font-serif: 'Source Han Serif CN', 'Noto Serif SC', 'Songti SC', serif;
+    --font-sans: 'LXGW WenKai', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --font-display: 'Cormorant Garamond', serif;
+  }
+}
+
+/* ============================================
+   基础样式
+   ============================================ */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-foreground antialiased;
+    font-family: var(--font-sans);
+    background: hsl(var(--cloud-white));
+    min-height: 100vh;
+    position: relative;
+  }
+  
+  /* 宣纸纹理背景 */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+      /* 宣纸纹理 */
+      url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%' height='100%' filter='url(%23noise)'/%3E%3C/svg%3E"),
+      /* 远山轮廓渐变 */
+      radial-gradient(ellipse 80% 50% at 50% 100%, hsla(168, 16%, 42%, 0.04) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 20% 0%, hsla(36, 27%, 94%, 0.8) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 80% 0%, hsla(36, 27%, 94%, 0.8) 0%, transparent 50%);
+    background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  /* 标题字体 */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: hsl(var(--ink-green));
+  }
+  
+  /* 选中文字样式 */
+  ::selection {
+    background: hsla(9, 52%, 53%, 0.2);
+    color: hsl(var(--ink-green));
+  }
+}
+
+/* ============================================
+   组件样式
+   ============================================ */
+@layer components {
+  /* 道系卡片 */
+  .dao-card {
+    @apply rounded-2xl;
+    background: hsl(var(--paper-yellow));
+    border: 1px solid hsl(var(--light-ink));
+    box-shadow: var(--shadow-subtle);
+    transition: all 0.3s cubic-bezier(0, 0, 0.2, 1);
+  }
+  
+  .dao-card:hover {
+    box-shadow: var(--shadow-soft);
+    transform: translateY(-2px);
+  }
+  
+  /* 毛玻璃效果 */
+  .dao-glass {
+    background: hsla(var(--cloud-white), 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid hsla(var(--light-ink), 0.5);
+  }
+  
+  /* 主按钮 - 朱砂 */
+  .btn-primary {
+    background: linear-gradient(135deg, hsl(var(--cinnabar)) 0%, hsl(9, 52%, 58%) 100%);
+    color: white;
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px hsla(9, 52%, 53%, 0.25);
+    transition: all 0.2s ease;
+  }
+  
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px hsla(9, 52%, 53%, 0.35);
+  }
+  
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+  
+  /* 次要按钮 */
+  .btn-secondary {
+    background: transparent;
+    color: hsl(var(--ink-green));
+    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--light-ink));
+    transition: all 0.2s ease;
+  }
+  
+  .btn-secondary:hover {
+    background: hsl(var(--paper-yellow));
+    border-color: hsl(var(--mountain-green));
+  }
+  
+  /* 幽灵按钮 */
+  .btn-ghost {
+    background: transparent;
+    color: hsl(var(--mountain-green));
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+  }
+  
+  .btn-ghost:hover {
+    color: hsl(var(--ink-green));
+    background: hsla(var(--light-ink), 0.5);
+  }
+  
+  /* 输入框 */
+  .dao-input {
+    background: hsl(var(--cloud-white));
+    border: 1px solid hsl(var(--light-ink));
+    border-radius: 0.75rem;
+    color: hsl(var(--ink-green));
+    padding: 0.875rem 1rem;
+    transition: all 0.2s ease;
+    font-family: var(--font-sans);
+  }
+  
+  .dao-input:focus {
+    border-color: hsl(var(--mountain-green));
+    box-shadow: 0 0 0 3px hsla(168, 16%, 42%, 0.1);
+    outline: none;
+  }
+  
+  .dao-input::placeholder {
+    color: hsl(var(--smoke-gray));
+  }
+  
+  /* 标签 */
+  .dao-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.75rem;
+    background: hsl(var(--light-ink));
+    color: hsl(var(--mountain-green));
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+  }
+  
+  .dao-tag:hover {
+    background: hsla(168, 16%, 42%, 0.15);
+  }
+  
+  /* 分隔线 - 山水意境 */
+  .dao-divider {
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      hsl(var(--light-ink)) 20%,
+      hsl(var(--light-ink)) 80%,
+      transparent 100%
+    );
+    margin: 1.5rem 0;
+  }
+  
+  /* 太极容器 */
+  .taiji-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* 水墨边框 */
+  .ink-border {
+    position: relative;
+  }
+  
+  .ink-border::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    padding: 2px;
+    background: linear-gradient(
+      135deg,
+      hsla(168, 16%, 42%, 0.3) 0%,
+      transparent 30%,
+      transparent 70%,
+      hsla(168, 16%, 42%, 0.3) 100%
+    );
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+/* ============================================
+   动画效果
+   ============================================ */
+@layer utilities {
+  /* 太极旋转 */
+  @keyframes taiji-rotate {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  
+  .animate-taiji {
+    animation: taiji-rotate 20s linear infinite;
+  }
+  
+  /* 水墨晕染 */
+  @keyframes ink-spread {
+    from {
+      transform: scale(0);
+      opacity: 0.8;
+    }
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ink-spread {
+    animation: ink-spread 0.6s ease-out forwards;
+  }
+  
+  /* 云雾飘动 */
+  @keyframes cloud-float {
+    0%, 100% {
+      transform: translateX(0) translateY(0);
+    }
+    25% {
+      transform: translateX(10px) translateY(-5px);
+    }
+    50% {
+      transform: translateX(-5px) translateY(5px);
+    }
+    75% {
+      transform: translateX(-10px) translateY(-3px);
+    }
+  }
+  
+  .animate-cloud-float {
+    animation: cloud-float 8s ease-in-out infinite;
+  }
+  
+  /* 呼吸效果 */
+  @keyframes breathe {
+    0%, 100% {
+      opacity: 0.6;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+  
+  .animate-breathe {
+    animation: breathe 4s ease-in-out infinite;
+  }
+  
+  /* 淡入上浮 */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s cubic-bezier(0, 0, 0.2, 1) forwards;
+  }
+  
+  /* 涟漪效果 */
+  @keyframes ripple {
+    from {
+      transform: scale(0);
+      opacity: 0.5;
+    }
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+  
+  .animate-ripple {
+    animation: ripple 0.6s ease-out forwards;
+  }
+  
+  /* 悬浮提升 */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-soft);
+  }
+  
+  /* 渐变文字 */
+  .text-gradient-cinnabar {
+    background: linear-gradient(135deg, hsl(var(--cinnabar)) 0%, hsl(9, 52%, 58%) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* 滚动条样式 */
+  .scrollbar-elegant::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  .scrollbar-elegant::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-elegant::-webkit-scrollbar-thumb {
+    background: hsl(var(--light-ink));
+    border-radius: 3px;
+  }
+  
+  .scrollbar-elegant::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--smoke-gray));
+  }
+}
+
+/* ============================================
+   布局工具
+   ============================================ */
+@layer utilities {
+  /* 内容容器 */
+  .content-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+  
+  @media (min-width: 640px) {
+    .content-container {
+      padding: 0 2rem;
+    }
+  }
+  
+  /* 页面背景 */
+  .page-bg {
+    min-height: 100vh;
+    background: linear-gradient(
+      180deg,
+      hsl(var(--cloud-white)) 0%,
+      hsla(var(--paper-yellow), 0.5) 50%,
+      hsl(var(--cloud-white)) 100%
+    );
+  }
+  
+  /* 道系留白 */
+  .dao-space-y > * + * {
+    margin-top: 1.5rem;
+  }
+  
+  /* 减少动画 */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ============================================
+   全局样式覆盖
+   ============================================ */
+html,
+body,
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* 修复 shadcn 组件样式 */
+[data-radix-popper-content-wrapper] {
+  z-index: 50 !important;
+}

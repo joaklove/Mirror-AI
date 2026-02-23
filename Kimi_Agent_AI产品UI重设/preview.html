@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>心镜 AI - 「云水禅心」设计预览</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --ink-green: #2C3E3A;
+      --mountain-green: #5B7C76;
+      --cloud-white: #FAFAF7;
+      --paper-yellow: #F5F0E8;
+      --cinnabar: #C45C48;
+      --stone-green: #4A6741;
+      --light-ink: #E8E4DC;
+      --smoke-gray: #9A9590;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Noto Serif SC', serif;
+      background: var(--cloud-white);
+      color: var(--ink-green);
+      line-height: 1.8;
+      min-height: 100vh;
+    }
+
+    /* 宣纸纹理背景 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-image: 
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"),
+        radial-gradient(ellipse 80% 50% at 50% 100%, rgba(91, 124, 118, 0.04) 0%, transparent 60%);
+      background-size: 200px 200px, 100% 100%;
+      opacity: 0.4;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .taiji {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .header h1 {
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      color: var(--mountain-green);
+      letter-spacing: 0.2em;
+    }
+
+    /* Section */
+    .section {
+      margin-bottom: 50px;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 24px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--light-ink);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: var(--cinnabar);
+      border-radius: 2px;
+    }
+
+    /* Color Palette */
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+
+    .color-item {
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid var(--light-ink);
+    }
+
+    .color-item .color-name {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .color-item .color-value {
+      font-size: 12px;
+      opacity: 0.7;
+      font-family: monospace;
+    }
+
+    /* Components */
+    .component-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .card {
+      background: var(--paper-yellow);
+      border-radius: 16px;
+      padding: 24px;
+      border: 1px solid var(--light-ink);
+      box-shadow: 0 2px 8px rgba(44, 62, 58, 0.06);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: 0 4px 16px rgba(44, 62, 58, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+      font-family: inherit;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--cinnabar) 0%, #D47562 100%);
+      color: white;
+      box-shadow: 0 2px 8px rgba(196, 92, 72, 0.25);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(196, 92, 72, 0.35);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink-green);
+      border: 1px solid var(--light-ink);
+    }
+
+    .btn-secondary:hover {
+      background: var(--paper-yellow);
+      border-color: var(--mountain-green);
+    }
+
+    /* Input */
+    .input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 12px;
+      border: 1px solid var(--light-ink);
+      background: var(--cloud-white);
+      color: var(--ink-green);
+      font-size: 14px;
+      font-family: inherit;
+      transition: all 0.2s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--mountain-green);
+      box-shadow: 0 0 0 3px rgba(91, 124, 118, 0.1);
+    }
+
+    .input::placeholder {
+      color: var(--smoke-gray);
+    }
+
+    /* Tags */
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .tag {
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 13px;
+      background: var(--light-ink);
+      color: var(--mountain-green);
+      transition: all 0.2s ease;
+    }
+
+    .tag:hover {
+      background: rgba(91, 124, 118, 0.15);
+    }
+
+    .tag.active {
+      background: var(--cinnabar);
+      color: white;
+    }
+
+    /* Dimensions */
+    .dimensions {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .dimension {
+      text-align: center;
+      padding: 20px;
+      border-radius: 16px;
+      border: 1px solid var(--light-ink);
+      background: var(--cloud-white);
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .dimension:hover {
+      background: var(--paper-yellow);
+      border-color: var(--mountain-green);
+    }
+
+    .dimension .symbol {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 auto 10px;
+    }
+
+    .dimension .label {
+      font-size: 14px;
+      color: var(--ink-green);
+    }
+
+    /* Quote */
+    .quote {
+      text-align: center;
+      padding: 40px;
+      border-radius: 16px;
+      background: var(--paper-yellow);
+      border: 1px solid var(--light-ink);
+      margin-top: 40px;
+    }
+
+    .quote p {
+      font-size: 20px;
+      font-style: italic;
+      color: var(--mountain-green);
+      margin-bottom: 12px;
+    }
+
+    .quote .source {
+      font-size: 14px;
+      color: var(--smoke-gray);
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding-top: 40px;
+      border-top: 1px solid var(--light-ink);
+      margin-top: 60px;
+    }
+
+    .footer p {
+      font-size: 14px;
+      color: var(--smoke-gray);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .header h1 {
+        font-size: 32px;
+      }
+      
+      .dimensions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <svg class="taiji" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="48" stroke="#2C3E3A" stroke-width="1" fill="none" opacity="0.3"/>
+        <path d="M50 2 A48 48 0 0 1 50 98 A24 24 0 0 1 50 50 A24 24 0 0 0 50 2" fill="#FAFAF7" stroke="#2C3E3A" stroke-width="0.5"/>
+        <path d="M50 2 A48 48 0 0 0 50 98 A24 24 0 0 0 50 50 A24 24 0 0 1 50 2" fill="#2C3E3A"/>
+        <circle cx="50" cy="26" r="8" fill="#2C3E3A"/>
+        <circle cx="50" cy="74" r="8" fill="#FAFAF7"/>
+        <circle cx="50" cy="50" r="2" fill="#C45C48" opacity="0.6"/>
+      </svg>
+      <h1>心镜 AI</h1>
+      <p class="subtitle">照见内心 · 道法自然</p>
+    </header>
+
+    <!-- Color Palette -->
+    <section class="section">
+      <h2 class="section-title">配色系统</h2>
+      <div class="color-grid">
+        <div class="color-item" style="background: #2C3E3A; color: white;">
+          <p class="color-name">墨青</p>
+          <p class="color-value">#2C3E3A</p>
+        </div>
+        <div class="color-item" style="background: #5B7C76; color: white;">
+          <p class="color-name">远山青</p>
+          <p class="color-value">#5B7C76</p>
+        </div>
+        <div class="color-item" style="background: #FAFAF7; color: #2C3E3A;">
+          <p class="color-name">云母白</p>
+          <p class="color-value">#FAFAF7</p>
+        </div>
+        <div class="color-item" style="background: #F5F0E8; color: #2C3E3A;">
+          <p class="color-name">宣纸黄</p>
+          <p class="color-value">#F5F0E8</p>
+        </div>
+        <div class="color-item" style="background: #C45C48; color: white;">
+          <p class="color-name">朱砂</p>
+          <p class="color-value">#C45C48</p>
+        </div>
+        <div class="color-item" style="background: #4A6741; color: white;">
+          <p class="color-name">石青</p>
+          <p class="color-value">#4A6741</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Components -->
+    <section class="section">
+      <h2 class="section-title">组件展示</h2>
+      <div class="component-grid">
+        <!-- Buttons -->
+        <div class="card">
+          <h3 class="card-title">
+            <span class="icon" style="background: hsla(9, 52%, 53%, 0.1); color: #C45C48;">●</span>
+            按钮样式
+          </h3>
+          <div class="btn-group">
+            <button class="btn btn-primary">主按钮</button>
+            <button class="btn btn-secondary">次要按钮</button>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="card">
+          <h3 class="card-title">
+            <span class="icon" style="background: hsla(168, 16%, 42%, 0.1); color: #5B7C76;">✎</span>
+            输入框
+          </h3>
+          <input type="text" class="input" placeholder="写下此刻的心情...">
+        </div>
+
+        <!-- Tags -->
+        <div class="card">
+          <h3 class="card-title">
+            <span class="icon" style="background: hsla(45, 80%, 50%, 0.1); color: #D4A017;">◎</span>
+            标签
+          </h3>
+          <div class="tags">
+            <span class="tag">平静</span>
+            <span class="tag active">喜悦</span>
+            <span class="tag">感恩</span>
+            <span class="tag">反思</span>
+          </div>
+        </div>
+
+        <!-- Card -->
+        <div class="card">
+          <h3 class="card-title">
+            <span class="icon" style="background: hsla(270, 50%, 55%, 0.1); color: #8B5CF6;">◈</span>
+            卡片
+          </h3>
+          <p style="font-size: 14px; color: var(--mountain-green); line-height: 1.8;">
+            卡片是界面的基本容器，采用宣纸黄色背景，柔和的圆角和阴影，营造温润的质感。
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dimensions -->
+    <section class="section">
+      <h2 class="section-title">六维度记录</h2>
+      <div class="dimensions">
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(350, 60%, 50%, 0.1); color: #DC4444;">心</div>
+          <p class="label">心理 / 情绪</p>
+        </div>
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(200, 60%, 50%, 0.1); color: #3B82F6;">思</div>
+          <p class="label">认知 / 思维</p>
+        </div>
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(45, 80%, 50%, 0.1); color: #D4A017;">行</div>
+          <p class="label">效率 / 行动</p>
+        </div>
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(270, 50%, 55%, 0.1); color: #8B5CF6;">人</div>
+          <p class="label">社交 / 关系</p>
+        </div>
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(150, 50%, 40%, 0.1); color: #2D8A4E;">身</div>
+          <p class="label">健康 / 身体</p>
+        </div>
+        <div class="dimension">
+          <div class="symbol" style="background: hsla(30, 40%, 45%, 0.1); color: #A67C52;">财</div>
+          <p class="label">财务 / 资源</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Quote -->
+    <div class="quote">
+      <p>「知人者智，自知者明」</p>
+      <p class="source">——《道德经》</p>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>心镜 AI · 云水禅心设计系统</p>
+    </footer>
+  </div>
+</body>
+</html>

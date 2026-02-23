@@ -1,0 +1,52 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/analysis/analysis",
+    "pages/journal/journal",
+    "pages/settings/settings"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "Mirror AI",
+    "navigationBarTextStyle": "black"
+  },
+  "tabBar": {
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "assets/icon-home.png",
+        "selectedIconPath": "assets/icon-home-selected.png"
+      },
+      {
+        "pagePath": "pages/journal/journal",
+        "text": "日记",
+        "iconPath": "assets/icon-journal.png",
+        "selectedIconPath": "assets/icon-journal-selected.png"
+      },
+      {
+        "pagePath": "pages/analysis/analysis",
+        "text": "分析",
+        "iconPath": "assets/icon-analysis.png",
+        "selectedIconPath": "assets/icon-analysis-selected.png"
+      },
+      {
+        "pagePath": "pages/settings/settings",
+        "text": "设置",
+        "iconPath": "assets/icon-settings.png",
+        "selectedIconPath": "assets/icon-settings-selected.png"
+      }
+    ],
+    "backgroundColor": "#fff",
+    "borderStyle": "black",
+    "selectedColor": "#007AFF",
+    "color": "#666"
+  },
+  "networkTimeout": {
+    "request": 10000,
+    "downloadFile": 10000
+  },
+  "debug": false,
+  "sitemapLocation": "sitemap.json"
+}

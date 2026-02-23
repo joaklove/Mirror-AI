@@ -1,0 +1,23 @@
+-- Add images support to journal_entries table
+ALTER TABLE journal_entries 
+ADD COLUMN IF NOT EXISTS images TEXT[] DEFAULT '{}';
+
+-- Create storage bucket for journal images
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('journal-images', 'journal-images', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Allow users to upload their own images
+CREATE POLICY "Users can upload their own journal images"
+  ON storage.objects FOR INSERT
+  WITH CHECK (bucket_id = 'journal-images' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Allow users to view their own journal images
+CREATE POLICY "Users can view their own journal images"
+  ON storage.objects FOR SELECT
+  USING (bucket_id = 'journal-images' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Allow users to delete their own journal images
+CREATE POLICY "Users can delete their own journal images"
+  ON storage.objects FOR DELETE
+  USING (bucket_id = 'journal-images' AND auth.uid()::text = (storage.foldername(name))[1]);
