@@ -72,8 +72,8 @@ export const llmService = {
     const settings = await settingsService.getSettings();
     const provider = this.modelProviders[model];
     
-    // 优先使用用户提供的API密钥
-    const openrouterApiKey = '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';
+    // 优先使用环境变量中的API密钥
+    const openrouterApiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
     if (openrouterApiKey) {
       return openrouterApiKey;
     }
