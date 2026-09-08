@@ -1,0 +1,19 @@
+{
+  "name": "mirror-ai",
+  "version": "1.0.0",
+  "description": "Mirror AI (心镜 AI) plugin — packages the three-level AI psychological analysis prompt modules (emotion recognition, behavior pattern, trauma screening) as a reusable skill for journal/diary analysis.",
+  "author": {
+    "name": "joaklove"
+  },
+  "homepage": "https://github.com/joaklove/Mirror-AI",
+  "license": "MIT",
+  "keywords": [
+    "psychology",
+    "journal",
+    "diary",
+    "emotion-analysis",
+    "mental-health",
+    "mirror-ai",
+    "心镜"
+  ]
+}
