@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar, getSidebarWidth } from '@/components/Sidebar';
-import { TopNavigation } from '@/components/TopNavigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { InkBackground } from '@/components/InkBackground';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -62,12 +61,11 @@ export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen relative">
       <InkBackground intensity="light" />
-      <TopNavigation />
       {!isMobile ? (
         <>
           <Sidebar onSignOut={handleSignOut} />
           <main className={`transition-all duration-300 ${getSidebarWidth(sidebarCollapsed, sidebarHovered)}`}>
-            <div className="pt-16 p-6 min-h-screen relative z-10">
+            <div className="p-6 min-h-screen relative z-10">
               {children}
             </div>
           </main>
@@ -102,7 +100,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           )}
           <Sidebar onSignOut={handleSignOut} />
           <main className="min-h-screen relative z-10">
-            <div className="pt-16 p-4 sm:p-6 min-h-screen">
+            <div className="p-4 sm:p-6 min-h-screen">
               {children}
             </div>
           </main>
