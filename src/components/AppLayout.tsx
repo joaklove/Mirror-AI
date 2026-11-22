@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sidebar } from '@/components/Sidebar';
 import { TaijiIconSimple } from '@/components/TaijiIcon';
@@ -11,6 +11,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -19,6 +20,30 @@ export function AppLayout({ children }: AppLayoutProps) {
       navigate('/auth');
     }
   }, [user, loading, navigate]);
+
+  // 鼠标进入按钮或侧栏：取消待执行的关闭
+  const handleSidebarEnter = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setSidebarOpen(true);
+  };
+
+  // 鼠标离开：延迟关闭，给「按钮 → 侧栏」的过渡留出时间，避免闪退
+  const handleSidebarLeave = () => {
+    if (closeTimer.current) clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setSidebarOpen(false), 300);
+  };
+
+  // 立即关闭（点遮罩 / 点导航项）
+  const closeSidebarNow = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setSidebarOpen(false);
+  };
 
   const handleSignOut = async () => {
     const confirmed = window.confirm('确定要退出登录吗？');
@@ -52,10 +77,14 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen relative">
       <InkBackground intensity="light" />
 
-      {/* 太极按钮：所有屏幕尺寸统一，侧栏默认完全隐藏 */}
-      <div className="fixed top-4 left-4 z-30">
+      {/* 太极按钮：悬停即展开（触屏可点击兜底） */}
+      <div
+        className="fixed top-4 left-4 z-30"
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
+      >
         <button
-          onClick={() => setSidebarOpen(true)}
+          onClick={handleSidebarEnter}
           aria-label="打开菜单"
           className="p-2 rounded-full dao-glass shadow-soft transition-transform hover:scale-105"
         >
@@ -63,19 +92,21 @@ export function AppLayout({ children }: AppLayoutProps) {
         </button>
       </div>
 
-      {/* 遮罩：点击空白处关闭侧栏 */}
+      {/* 遮罩：点击空白处立即关闭侧栏 */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/30 z-40"
-          onClick={() => setSidebarOpen(false)}
+          onClick={closeSidebarNow}
         />
       )}
 
-      {/* 抽屉式侧栏 */}
+      {/* 抽屉式侧栏：悬停保持展开 */}
       <Sidebar
         open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
+        onClose={closeSidebarNow}
         onSignOut={handleSignOut}
+        onMouseEnter={handleSidebarEnter}
+        onMouseLeave={handleSidebarLeave}
       />
 
       <main className="min-h-screen relative z-10">

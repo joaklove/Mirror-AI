@@ -19,6 +19,8 @@ interface SidebarProps {
   open: boolean;
   onClose: () => void;
   onSignOut?: () => void;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 type NavItem = {
@@ -51,7 +53,7 @@ const navCategories: NavCategory[] = [
 
 const homeItem = { path: '/', label: '首页', icon: Home };
 
-export function Sidebar({ open, onClose, onSignOut }: SidebarProps) {
+export function Sidebar({ open, onClose, onSignOut, onMouseEnter, onMouseLeave }: SidebarProps) {
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     navCategories.forEach(cat => {
@@ -80,7 +82,10 @@ export function Sidebar({ open, onClose, onSignOut }: SidebarProps) {
       )}
       style={{
         borderRight: '1px solid hsl(var(--light-ink))',
+        pointerEvents: open ? 'auto' : 'none',
       }}
+      onMouseEnter={open ? onMouseEnter : undefined}
+      onMouseLeave={open ? onMouseLeave : undefined}
     >
       <div className="flex flex-col h-full">
         <div
