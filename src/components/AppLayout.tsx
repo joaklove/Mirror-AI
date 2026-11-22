@@ -88,7 +88,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           aria-label="打开菜单"
           className="p-2 rounded-full dao-glass shadow-soft transition-transform hover:scale-105"
         >
-          <TaijiIconSimple size={26} />
+          <TaijiIconSimple size={26} animated style={{ animationDuration: '10s' }} />
         </button>
       </div>
 

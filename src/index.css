@@ -606,6 +606,237 @@
   }
 }
 
+/* ========== 禅意微动效：气息（阶段一）+ 回应（阶段二）========== */
+
+/* 古语呼吸：极缓慢的明暗起伏，如香火明灭 */
+@keyframes verse-breathe {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+.animate-verse-breathe {
+  animation: verse-breathe 9s ease-in-out infinite;
+}
+
+/* 维度涟漪：从点击处晕开一圈水墨 */
+@keyframes ink-ripple {
+  0% { transform: scale(0.35); opacity: 0.5; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+
+.ink-ripple {
+  position: absolute;
+  inset: 0;
+  border-radius: 0.75rem;
+  border: 1.5px solid hsl(var(--mountain-green));
+  pointer-events: none;
+  animation: ink-ripple 0.7s ease-out forwards;
+}
+
+/* 保存印章：朱砂「已珍藏」盖章，盖完淡去 */
+@keyframes seal-stamp {
+  0% { transform: scale(1.5) rotate(-15deg); opacity: 0; }
+  40% { transform: scale(0.96) rotate(-8deg); opacity: 1; }
+  80% { transform: scale(1) rotate(-8deg); opacity: 1; }
+  100% { transform: scale(1) rotate(-8deg); opacity: 0; }
+}
+
+.seal-stamp {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid hsl(9, 55%, 45%);
+  border-radius: 7px;
+  color: hsl(9, 55%, 45%);
+  background: hsla(9, 52%, 53%, 0.06);
+  font-family: var(--font-serif);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  writing-mode: vertical-rl;
+  pointer-events: none;
+  z-index: 5;
+  animation: seal-stamp 2.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* 输入聚焦：墨迹自输入框边缘缓缓晕开 */
+.ink-focus {
+  position: relative;
+  border-radius: 0.5rem;
+  transition: box-shadow 0.5s ease;
+}
+
+.ink-focus::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 0.75rem;
+  box-shadow: 0 0 0 3px hsla(168, 30%, 25%, 0.14), 0 0 22px hsla(168, 30%, 25%, 0.08);
+  opacity: 0;
+  transform: scale(0.98);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.ink-focus:focus-within::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 侧栏滑入阻尼：减速曲线，如门扇轻合 */
+.ease-drawer {
+  transition-duration: 450ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ========== 阶段三：意趣（时令 / 印记 / 仪式）========== */
+
+/* 四季主题极低饱和换肤：只改边框与卡片底色，正文对比度不变 */
+[data-season='spring'] { --season-accent: 150 30% 36%; --season-wash: 150 25% 96%; }
+[data-season='summer'] { --season-accent: 9 52% 48%; --season-wash: 24 45% 96%; }
+[data-season='autumn'] { --season-accent: 30 45% 40%; --season-wash: 36 40% 95%; }
+[data-season='winter'] { --season-accent: 200 22% 38%; --season-wash: 200 20% 96%; }
+
+[data-season] .dao-card:not(.season-card) {
+  border-color: hsl(var(--season-accent) / 0.2);
+}
+
+.season-card {
+  background: linear-gradient(135deg, hsl(var(--season-wash) / 0.78), hsl(0 0% 100% / 0.72));
+  border-color: hsl(var(--season-accent) / 0.22);
+  transition: background 1.2s ease, border-color 1.2s ease;
+}
+
+.season-seal {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid hsl(var(--season-accent) / 0.55);
+  border-radius: 8px;
+  color: hsl(var(--season-accent));
+  background: hsl(var(--season-wash) / 0.85);
+  font-family: var(--font-serif);
+  font-size: 22px;
+  animation: season-seal-in 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes season-seal-in {
+  from { opacity: 0; transform: scale(0.7) rotate(-8deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+/* 成就徽章：达成者盖朱砂印，未达成者只留淡痕 */
+.badge-seal {
+  width: 52px;
+  min-height: 46px;
+  padding: 5px 2px;
+  border-radius: 7px;
+  border: 1.5px solid;
+  font-family: var(--font-serif);
+}
+
+.badge-seal.earned {
+  color: hsl(9, 55%, 45%);
+  border-color: hsl(9, 55%, 45% / 0.7);
+  background: hsla(9, 52%, 53%, 0.08);
+  animation: badge-unlock 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.badge-seal.locked {
+  color: hsl(var(--smoke-gray) / 0.5);
+  border-color: hsl(var(--light-ink));
+  background: hsl(var(--paper-yellow) / 0.5);
+}
+
+@keyframes badge-unlock {
+  0% { opacity: 0; transform: scale(0.55) rotate(-14deg); }
+  60% { opacity: 1; transform: scale(1.08) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+
+.badge-count {
+  animation: count-pop 0.6s ease-out both;
+}
+
+@keyframes count-pop {
+  from { transform: scale(0.82); opacity: 0.45; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* 晨报仪式：同心光环扩散 + 阶段文案 + 行进圆点 */
+.ritual-halo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 1px solid hsl(var(--cinnabar) / 0.4);
+  box-shadow: inset 0 0 24px hsl(var(--season-accent) / 0.12);
+  pointer-events: none;
+  animation: ritual-ring 2.4s ease-out infinite;
+}
+
+@keyframes ritual-ring {
+  0% { transform: translate(-50%, -50%) scale(0.55); opacity: 0; }
+  20% { opacity: 0.6; }
+  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+}
+
+.ritual-stage {
+  animation: stage-in 0.45s ease-out both;
+}
+
+@keyframes stage-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ritual-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: hsl(var(--light-ink));
+  transition: width 0.35s ease, background 0.35s ease;
+}
+
+.ritual-dot.active {
+  width: 18px;
+  background: hsl(var(--cinnabar));
+}
+
+/* 晨报展开：如卷轴自上而下铺开 */
+.report-unfold {
+  transform-origin: top center;
+  animation: report-unfold 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes report-unfold {
+  from { opacity: 0; transform: scaleY(0.9) translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-verse-breathe,
+  .ink-ripple,
+  .seal-stamp,
+  .season-seal,
+  .badge-seal,
+  .badge-count,
+  .ritual-halo,
+  .ritual-stage,
+  .report-unfold {
+    animation: none;
+  }
+}
+
 html,
 body,
 #root {

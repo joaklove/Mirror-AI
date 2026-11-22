@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -38,6 +38,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TaijiIcon } from '@/components/TaijiIcon';
 import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
+import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib/daoDaily';
+
+/** 晨报生成的三个仪式阶段 */
+const RITUAL_STAGES = [
+  { title: '静心', desc: '收拢散落的心绪' },
+  { title: '观照', desc: '回望今日的痕迹' },
+  { title: '落笔', desc: '汇成一纸晨报' },
+] as const;
 
 type Dimension = 'psychology' | 'cognitive' | 'efficiency' | 'social' | 'health' | 'finance';
 
@@ -257,6 +265,12 @@ const Home = () => {
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [reportContent, setReportContent] = useState('');
+  const [reportStage, setReportStage] = useState(0);
+
+  // 微动效状态
+  const [verse] = useState(() => ['心静自然凉', '万物静观皆自得', '行到水穷处，坐看云起时', '道法自然'][Math.floor(Math.random() * 4)]);
+  const [rippleKey, setRippleKey] = useState(0);
+  const [sealKey, setSealKey] = useState(0);
 
   const currentDimension = DIMENSIONS.find(d => d.id === selectedDimension)!;
 
@@ -266,6 +280,14 @@ const Home = () => {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  // 阶段三：时令彩蛋与修行印记（渲染期不使用随机数）
+  const solarTerm = useMemo(() => getSolarTerm(), []);
+  const shichen = useMemo(() => getShichen(), []);
+  const streak = useMemo(
+    () => getJournalStreak(entries.map(entry => entry.timestamp)),
+    [entries]
+  );
 
   const createEntryMutation = useMutation({
     mutationFn: journalService.createEntry,
@@ -295,7 +317,8 @@ const Home = () => {
       setSelectedTags([]);
       setImages([]);
       setShowQuickAnalysis(true);
-      
+      setSealKey(k => k + 1);
+
       try {
         const analysis = await quickAnalysisService.analyze(savedContent);
         if (analysis) {
@@ -350,6 +373,18 @@ const Home = () => {
       }
     };
   }, []);
+
+  // 晨报仪式：生成中三阶段轮播，与 2s 生成时长对齐
+  useEffect(() => {
+    if (!isGenerating) {
+      setReportStage(0);
+      return;
+    }
+    const timers = RITUAL_STAGES.slice(1).map((_, i) =>
+      window.setTimeout(() => setReportStage(i + 1), (i + 1) * 650)
+    );
+    return () => timers.forEach(window.clearTimeout);
+  }, [isGenerating]);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -572,12 +607,12 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative" data-season={solarTerm.season}>
       <InkBackground intensity="light" />
       
       <main className="py-8 pb-32 relative z-10 max-w-4xl mx-auto px-4">
         {/* 顶部问候语 */}
-        <div className="mb-8 animate-fade-in-up">
+        <div className="mb-5 animate-fade-in-up">
           <p 
             className="text-lg"
             style={{ 
@@ -590,18 +625,94 @@ const Home = () => {
               {user?.email?.split('@')[0] || '朋友'}
             </span>
           </p>
-          <p 
-            className="text-sm mt-1"
+          <p
+            className="text-sm mt-1 animate-verse-breathe"
             style={{ color: 'hsl(var(--smoke-gray))' }}
           >
-            「{['心静自然凉', '万物静观皆自得', '行到水穷处，坐看云起时', '道法自然'][Math.floor(Math.random() * 4)]}」
+            「{verse}」
+          </p>
+          <p
+            className="text-xs mt-2"
+            style={{ color: 'hsl(var(--stone-green))' }}
+          >
+            {shichen.name} · {shichen.phrase}　｜　{shichen.egg}
           </p>
         </div>
 
+        {/* 时令签 + 修行印记（阶段三） */}
+        <div
+          className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-fade-in-up"
+          style={{ animationDelay: '0.15s' }}
+        >
+          {/* 节气主题卡：随季节换肤 */}
+          <Card className="dao-card season-card p-4 flex items-center gap-4">
+            <div
+              className="season-seal flex-shrink-0"
+              key={solarTerm.name}
+              aria-hidden="true"
+            >
+              {solarTerm.symbol}
+            </div>
+            <div className="min-w-0">
+              <p
+                className="text-base font-medium"
+                style={{ fontFamily: 'var(--font-serif)', color: 'hsl(var(--ink-green))' }}
+              >
+                时令 · {solarTerm.name}
+              </p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: 'hsl(var(--smoke-gray))' }}
+              >
+                {solarTerm.phrase}
+              </p>
+            </div>
+          </Card>
+
+          {/* 连续记录成就徽章 */}
+          <Card className="dao-card season-card p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-shrink-0 text-center">
+                <div
+                  className="text-2xl font-semibold leading-none badge-count"
+                  style={{ fontFamily: 'var(--font-serif)', color: 'hsl(var(--cinnabar))' }}
+                >
+                  {streak}
+                </div>
+                <div
+                  className="text-[10px] mt-1"
+                  style={{ color: 'hsl(var(--smoke-gray))' }}
+                >
+                  连续记录日
+                </div>
+              </div>
+              <div className="h-10 w-px flex-shrink-0" style={{ background: 'hsl(var(--light-ink))' }} />
+              <div className="flex gap-2 flex-wrap justify-end">
+                {STREAK_BADGES.map((badge) => {
+                  const earned = streak >= badge.days;
+                  return (
+                    <div
+                      key={`${badge.days}-${earned ? 'earned' : 'locked'}`}
+                      title={earned ? `${badge.name} · ${badge.hint}` : `再记 ${badge.days - streak} 日解锁「${badge.name}」`}
+                      className={cn(
+                        'badge-seal flex flex-col items-center justify-center',
+                        earned ? 'earned' : 'locked'
+                      )}
+                    >
+                      <span className="text-xs font-medium">{badge.name}</span>
+                      <span className="text-[9px] mt-0.5">{badge.days} 日</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </Card>
+        </div>
+
         {/* 记录卡片 */}
-        <Card 
+        <Card
           className="dao-card p-5 mb-8 animate-fade-in-up"
-          style={{ animationDelay: '0.1s' }}
+          style={{ animationDelay: '0.1s', position: 'relative' }}
         >
           <label 
             className="text-sm font-medium mb-3 block"
@@ -616,24 +727,28 @@ const Home = () => {
                 onClick={() => {
                   setSelectedDimension(dim.id);
                   setSelectedTags([]);
+                  setRippleKey(k => k + 1);
                 }}
                 className={cn(
-                  'flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200',
+                  'relative overflow-hidden flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-200',
                   selectedDimension === dim.id
                     ? `${dim.bgColor} ${dim.borderColor} border-2 shadow-soft`
                     : 'hover:bg-[hsl(var(--paper-yellow))] border-2 border-transparent'
                 )}
               >
-                <div 
+                {selectedDimension === dim.id && rippleKey > 0 && (
+                  <span key={rippleKey} className="ink-ripple" aria-hidden="true" />
+                )}
+                <div
                   className={cn(
-                    'w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium',
+                    'relative z-10 w-10 h-10 rounded-full flex items-center justify-center text-lg font-medium',
                     selectedDimension === dim.id ? dim.bgColor : 'bg-[hsl(var(--light-ink))]'
                   )}
                 >
                   <span className={dim.color}>{dim.symbol}</span>
                 </div>
-                <span 
-                  className="text-xs font-medium"
+                <span
+                  className="relative z-10 text-xs font-medium"
                   style={{ color: 'hsl(var(--ink-green))' }}
                 >
                   {dim.shortLabel}
@@ -656,7 +771,7 @@ const Home = () => {
             {currentDimension.description}
           </div>
 
-          <div className="relative mb-4">
+          <div className="relative mb-4 ink-focus">
             <Textarea
               ref={textareaRef}
               value={content + (interimTranscript ? interimTranscript : '')}
@@ -667,7 +782,11 @@ const Home = () => {
                 isListening && "border-red-400"
               )}
             />
-            
+
+            {sealKey > 0 && (
+              <div key={sealKey} className="seal-stamp" aria-hidden="true">已珍藏</div>
+            )}
+
             <Button
               type="button"
               variant={isListening ? "destructive" : "outline"}
@@ -989,11 +1108,21 @@ const Home = () => {
         </span>
       </div>
 
-      {/* 生成中遮罩 */}
+      {/* 生成中遮罩：三阶段仪式动效 */}
       {isGenerating && (
         <div className="fixed inset-0 z-30 dao-glass flex items-center justify-center">
           <div className="text-center space-y-6">
-            <TaijiIcon size={64} animated glow />
+            <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
+              {[0, 1, 2].map(i => (
+                <span
+                  key={i}
+                  className="ritual-halo"
+                  style={{ animationDelay: `${i * 0.8}s` }}
+                  aria-hidden="true"
+                />
+              ))}
+              <TaijiIcon size={64} animated glow />
+            </div>
             <div className="space-y-2">
               <h3 
                 className="text-xl font-medium animate-breathe"
@@ -1004,12 +1133,22 @@ const Home = () => {
               >
                 正在感悟天地之道
               </h3>
-              <p 
-                className="text-sm"
+              <p
+                key={reportStage}
+                className="text-sm ritual-stage"
                 style={{ color: 'hsl(var(--mountain-green))' }}
               >
-                静心等待 · 智慧将至
+                {RITUAL_STAGES[reportStage].title} · {RITUAL_STAGES[reportStage].desc}
               </p>
+              <div className="flex items-center justify-center gap-2 pt-1">
+                {RITUAL_STAGES.map((stage, i) => (
+                  <span
+                    key={stage.title}
+                    className={cn('ritual-dot', i === reportStage && 'active')}
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1025,7 +1164,7 @@ const Home = () => {
             AI 生成的个性化晨报
           </DialogDescription>
           
-          <div className="p-8">
+          <div className="p-8 report-unfold">
             <div className="flex items-center gap-3 mb-6">
               <Sunrise className="w-6 h-6" style={{ color: 'hsl(var(--cinnabar))' }} />
               <h2 

@@ -77,7 +77,7 @@ export function Sidebar({ open, onClose, onSignOut, onMouseEnter, onMouseLeave }
     <aside
       className={cn(
         'fixed left-0 top-0 h-screen w-64 dao-glass z-50',
-        'transition-transform duration-300 ease-in-out',
+        'transition-transform ease-drawer',
         open ? 'translate-x-0' : '-translate-x-full'
       )}
       style={{

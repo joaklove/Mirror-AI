@@ -6,6 +6,7 @@ interface TaijiIconProps {
   className?: string;
   animated?: boolean;
   glow?: boolean;
+  style?: React.CSSProperties;
 }
 
 export const TaijiIcon: React.FC<TaijiIconProps> = ({
@@ -85,6 +86,7 @@ export const TaijiIconSimple: React.FC<TaijiIconProps> = ({
   size = 24,
   className,
   animated = false,
+  style,
 }) => {
   return (
     <svg
@@ -94,6 +96,7 @@ export const TaijiIconSimple: React.FC<TaijiIconProps> = ({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={cn(animated && 'animate-taiji', className)}
+      style={style}
     >
       <circle cx="50" cy="50" r="48" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.2" />
       <path
