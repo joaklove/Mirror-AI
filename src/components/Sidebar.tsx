@@ -1,22 +1,11 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Home, 
+import {
+  Home,
   ChevronLeft,
   ChevronRight,
   LogOut,
   User,
-  Brain,
-  Sparkles,
-  TrendingUp,
-  Activity,
-  Heart,
-  Leaf,
-  Users,
-  BookOpen,
-  GraduationCap,
-  Stethoscope,
-  TreePine,
   Tag,
   Plug,
   Settings,
@@ -46,33 +35,6 @@ type NavCategory = {
 };
 
 const navCategories: NavCategory[] = [
-  {
-    id: 'ai-analysis',
-    title: 'AI分析',
-    icon: Brain,
-    defaultExpanded: true,
-    items: [
-      { path: '/analysis', label: '分析', icon: Brain },
-      { path: '/multimodal', label: '多模态分析', icon: Sparkles },
-      { path: '/predictive', label: '预测性分析', icon: TrendingUp },
-      { path: '/context', label: '情境分析', icon: Activity },
-      { path: '/recommendation', label: '个性化推荐', icon: Sparkles },
-      { path: '/professional', label: '专业领域分析', icon: BookOpen },
-    ],
-  },
-  {
-    id: 'life',
-    title: '生活',
-    icon: Heart,
-    defaultExpanded: true,
-    items: [
-      { path: '/social', label: '社交与协作', icon: Users },
-      { path: '/life-quality', label: '生活品质提升', icon: Heart },
-      { path: '/personal-growth', label: '个人成长生态', icon: GraduationCap },
-      { path: '/health', label: '健康生活倡导', icon: Stethoscope },
-      { path: '/sustainable', label: '可持续生活', icon: TreePine },
-    ],
-  },
   {
     id: 'management',
     title: '管理',

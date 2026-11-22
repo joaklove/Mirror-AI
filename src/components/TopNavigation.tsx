@@ -1,13 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, BarChart3, Heart, Leaf, Settings } from 'lucide-react';
+import { Home, Settings } from 'lucide-react';
 import { TaijiIconSimple } from './TaijiIcon';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { path: '/', label: '首页', icon: Home },
-  { path: '/analysis', label: '分析', icon: BarChart3 },
-  { path: '/health', label: '健康', icon: Heart },
-  { path: '/sustainable', label: '可持续生活', icon: Leaf },
   { path: '/settings', label: '设置', icon: Settings },
 ];
 
