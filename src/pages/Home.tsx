@@ -39,6 +39,7 @@ import { TaijiIcon } from '@/components/TaijiIcon';
 import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib/daoDaily';
+import { morningReportService, type MorningReportData } from '@/services/morningReportService';
 
 /** 晨报生成的三个仪式阶段 */
 const RITUAL_STAGES = [
@@ -264,7 +265,7 @@ const Home = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [reportContent, setReportContent] = useState('');
+  const [reportData, setReportData] = useState<MorningReportData | null>(null);
   const [reportStage, setReportStage] = useState(0);
 
   // 微动效状态
@@ -539,33 +540,25 @@ const Home = () => {
 
   const handleGenerateReport = async () => {
     setIsGenerating(true);
-    setTimeout(() => {
-      setReportContent(`## 今日晨报
-
-### 整体情绪分析
-今日记录显示出平和的心态，情绪波动较小，保持了一贯的稳定性。
-
-### 关键事件回顾
-- 完成了重要的工作任务
-- 与朋友进行了愉快的交流
-- 保持了规律的作息
-
-### 个人成长洞察
-从记录中可以看出，你正在逐步建立良好的生活习惯，这种持续的积累将带来长远的改变。
-
-### 今日行动建议
-1. 继续保持当前的节奏
-2. 留出时间进行自我反思
-3. 关注身体的信号，适时休息
-
-### 能量水平评估
-今日能量水平：★★★★☆
-
-### 冥想/反思主题
-**「静水流深」** - 在平静的表面下，蕴含着深邃的力量。`);
-      setIsGenerating(false);
+    try {
+      const nickname = user?.email?.split('@')[0] || '朋友';
+      // 仪式动效至少展示 1.3s，与真实 AI 调用并行，避免一闪而过
+      const [data] = await Promise.all([
+        morningReportService.generate(entries, nickname),
+        new Promise(resolve => setTimeout(resolve, 1300)),
+      ]);
+      setReportData(data);
       setShowReport(true);
-    }, 2000);
+    } catch (error) {
+      console.error('Generate report error:', error);
+      toast({
+        title: '晨报生成失败',
+        description: '请稍后再试',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const formatSmartTime = (timestamp: string): string => {
@@ -1178,17 +1171,90 @@ const Home = () => {
               </h2>
             </div>
             
-            <div 
-              className="prose prose-slate max-w-none"
-              style={{ fontFamily: 'var(--font-sans)' }}
-            >
-              <div 
-                className="whitespace-pre-wrap leading-relaxed"
-                style={{ color: 'hsl(var(--ink-green))' }}
-              >
-                {reportContent}
+            {reportData && (
+              <div className="space-y-5" style={{ fontFamily: 'var(--font-sans)' }}>
+                {/* 开场白 */}
+                {reportData.greeting && (
+                  <p
+                    className="text-lg leading-relaxed text-center"
+                    style={{ fontFamily: 'var(--font-serif)', color: 'hsl(var(--ink-green))' }}
+                  >
+                    {reportData.greeting}
+                  </p>
+                )}
+
+                {/* 情绪底色 */}
+                {reportData.mood && (
+                  <div
+                    className="p-4 rounded-lg"
+                    style={{ background: 'hsl(var(--paper-yellow))' }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Heart className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'hsl(var(--cinnabar))' }} />
+                      <div>
+                        <div className="text-xs mb-1" style={{ color: 'hsl(var(--smoke-gray))' }}>今日心境</div>
+                        <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--ink-green))' }}>
+                          {reportData.mood}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 真实瞬间 */}
+                {reportData.highlights.length > 0 && (
+                  <div>
+                    <div className="text-xs mb-2" style={{ color: 'hsl(var(--smoke-gray))' }}>此刻留痕</div>
+                    <ul className="space-y-2">
+                      {reportData.highlights.map((h, i) => (
+                        <li key={i} className="flex items-start gap-2 text-sm leading-relaxed" style={{ color: 'hsl(var(--ink-green))' }}>
+                          <span style={{ color: 'hsl(var(--cinnabar))' }}>·</span>
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* 温和观察 */}
+                {reportData.insight && (
+                  <div>
+                    <div className="text-xs mb-1" style={{ color: 'hsl(var(--smoke-gray))' }}>一面镜子</div>
+                    <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--mountain-green))' }}>
+                      {reportData.insight}
+                    </p>
+                  </div>
+                )}
+
+                {/* 今日小动作 */}
+                {reportData.suggestion && (
+                  <div
+                    className="p-4 rounded-lg border"
+                    style={{ background: 'hsla(9, 52%, 53%, 0.04)', borderColor: 'hsla(9, 52%, 53%, 0.2)' }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <Sunrise className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: 'hsl(var(--cinnabar))' }} />
+                      <div>
+                        <div className="text-xs mb-1" style={{ color: 'hsl(var(--cinnabar))' }}>今日一行</div>
+                        <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--ink-green))' }}>
+                          {reportData.suggestion}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 收尾 */}
+                {reportData.closing && (
+                  <p
+                    className="text-sm text-center pt-2 leading-relaxed"
+                    style={{ fontFamily: 'var(--font-serif)', color: 'hsl(var(--smoke-gray))' }}
+                  >
+                    {reportData.closing}
+                  </p>
+                )}
               </div>
-            </div>
+            )}
             
             <div className="flex justify-center mt-8">
               <Button
