@@ -962,27 +962,31 @@ const Home = () => {
         </div>
       </main>
 
-      {/* 生成晨报按钮 */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-20">
+      {/* 生成晨报按钮：右下角小型悬浮按钮，图标为主，hover 出文字提示 */}
+      <div className="fixed bottom-6 right-6 z-20 group">
         <Button
           onClick={handleGenerateReport}
           disabled={isGenerating}
-          className={cn(
-            'btn-primary px-8 py-6 text-lg shadow-elevated'
-          )}
+          aria-label="生成今日晨报"
+          className="h-14 w-14 !rounded-full !p-0 flex items-center justify-center transition-transform hover:scale-105"
+          style={{
+            background: 'linear-gradient(135deg, hsl(var(--ink-green)) 0%, hsl(var(--mountain-green)) 100%)',
+            color: 'white',
+            boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
+          }}
         >
           {isGenerating ? (
-            <>
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-              生成中...
-            </>
+            <Loader2 className="w-6 h-6 animate-spin" />
           ) : (
-            <>
-              <Sunrise className="w-5 h-5 mr-2" />
-              生成今日晨报
-            </>
+            <Sunrise className="w-6 h-6" />
           )}
         </Button>
+        <span
+          className="pointer-events-none absolute bottom-[4.5rem] right-0 whitespace-nowrap rounded-lg px-3 py-1.5 text-xs opacity-0 shadow-soft transition-opacity group-hover:opacity-100 dao-glass"
+          style={{ color: 'hsl(var(--ink-green))' }}
+        >
+          生成今日晨报
+        </span>
       </div>
 
       {/* 生成中遮罩 */}
