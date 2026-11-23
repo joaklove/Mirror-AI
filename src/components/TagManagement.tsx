@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { journalService } from '@/services/journalService';
-import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 
 interface CustomTag {
@@ -158,7 +157,6 @@ export function TagManagementPage() {
 
   return (
     <div className="min-h-screen relative">
-      <InkBackground intensity="light" />
       
       <header 
         className="sticky top-0 z-10 dao-glass shadow-sm"

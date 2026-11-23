@@ -7,7 +7,6 @@ import { privacyService } from '@/services/privacyService';
 import { useAuth } from '@/contexts/AuthContext';
 import { PrivacySettings, DEFAULT_PRIVACY_SETTINGS } from '@/types/privacy';
 import { Shield, ShieldCheck, Download, Trash2, Server, Brain, Share2, FileText } from 'lucide-react';
-import { InkBackground } from '@/components/InkBackground';
 
 export function PrivacySettingsPage() {
   const { user } = useAuth();
@@ -88,7 +87,6 @@ export function PrivacySettingsPage() {
 
   return (
     <div className="min-h-screen relative">
-      <InkBackground intensity="light" />
       
       <header 
         className="sticky top-0 z-10 dao-glass"

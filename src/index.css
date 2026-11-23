@@ -896,3 +896,36 @@ html.font-xlarge .mobile-tab-bar span { font-size: 12px; }
 [data-mobile-layout="1"][data-active-tab="me"] [data-mobile-page="me-extra"] {
   display: block;
 }
+
+/* ============ 手机端水墨背景降级：根治背景闪烁 ============
+   根因：首页同时叠了两层 InkBackground（AppLayout 一层 + Home 一层），
+   每层含全屏 background-position 渐变动画 + 高斯模糊光球 + 25 粒子重绘。
+   手机 WebView 的 GPU 合成跟不上，表现为背景周期性"一闪一闪"。
+   处理：① 隐藏 Home 内多余的那层（见 Home.tsx）保留 AppLayout 单层；
+         ② 小屏降级掉最费的重绘型动画，静态渐变视觉保留，杜绝闪烁。 */
+@media (max-width: 767px) {
+  /* 全屏 background-position 动画：每帧重绘整屏，是闪烁主因 → 静态化 */
+  .animate-gradient-shift {
+    animation: none !important;
+    background-position: 0% 0% !important;
+  }
+
+  /* 大光球的 blur(30px) + 位移/透明度动画：手机端最吃合成 → 停动画、去模糊 */
+  .animate-orb-float {
+    animation: none !important;
+    filter: none !important;
+    will-change: auto !important;
+  }
+
+  /* 粒子：25 个带 blur 和 box-shadow 的独立重绘层 → 手机上直接不渲染 */
+  .animate-particle-float {
+    display: none !important;
+  }
+
+  /* 云雾与水墨山形的 translate 动画开销低但叠加多层，一并静态化 */
+  .animate-cloud-float,
+  .animate-breathe {
+    animation: none !important;
+  }
+}
+

@@ -18,7 +18,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { journalService } from '@/services/journalService';
 import { useQuery } from '@tanstack/react-query';
-import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
@@ -119,7 +118,6 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen relative">
-      <InkBackground intensity="light" />
       
       <header 
         className="sticky top-0 z-10 dao-glass shadow-sm"

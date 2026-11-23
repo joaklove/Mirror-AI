@@ -7,6 +7,31 @@
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <!-- 首屏主题预设：在 CSS/JS 加载前同步应用，避免 React 挂载时才切主题造成的一闪。
+       与 useTheme.ts 使用相同的 localStorage key（mirror-ai-theme / mirror-ai-custom-theme）。 -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('mirror-ai-theme') || 'light';
+        var dark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        var c = localStorage.getItem('mirror-ai-custom-theme') || 'default';
+        var presets = {
+          default: ['168 22% 15%','168 16% 42%','9 52% 53%','40 20% 94%','40 15% 88%','40 10% 55%','40 20% 98%'],
+          nature:  ['120 25% 20%','120 20% 45%','45 70% 50%','50 30% 92%','50 20% 85%','45 15% 50%','50 25% 96%'],
+          ocean:   ['200 30% 18%','200 25% 42%','190 60% 55%','200 15% 94%','200 15% 88%','200 10% 50%','200 20% 97%']
+        };
+        var p = presets[c];
+        if (p) {
+          var r = document.documentElement.style;
+          ['--ink-green','--mountain-green','--cinnabar','--paper-yellow','--light-ink','--smoke-gray','--cloud-white']
+            .forEach(function (k, i) { r.setProperty(k, p[i]); });
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   

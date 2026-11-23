@@ -42,7 +42,6 @@ import { quickAnalysisService } from '@/services/quickAnalysisService';
 import { voiceService } from '@/services/voiceService';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { TaijiIcon } from '@/components/TaijiIcon';
-import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib/daoDaily';
 import { morningReportService, type MorningReportData } from '@/services/morningReportService';
@@ -760,8 +759,6 @@ const Home = () => {
       data-active-tab={mobileTab}
       data-mobile-layout={isMobile ? '1' : undefined}
     >
-      <InkBackground intensity="light" />
-
       {/* 下拉刷新指示（仅手机端） */}
       {isMobile && (
         <div

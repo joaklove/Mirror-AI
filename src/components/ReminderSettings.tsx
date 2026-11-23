@@ -9,7 +9,6 @@ import { ReminderSettings as ReminderSettingsType, DEFAULT_REMINDER_SETTINGS, DA
 import { notificationService } from '@/services/notificationService';
 import { reminderScheduler } from '@/services/reminderScheduler';
 import { Bell, Clock, Sparkles, Heart, BellOff, Volume2 } from 'lucide-react';
-import { InkBackground } from '@/components/InkBackground';
 
 export function ReminderSettingsPage() {
   const [settings, setSettings] = useState<ReminderSettingsType>(DEFAULT_REMINDER_SETTINGS);
@@ -86,7 +85,6 @@ export function ReminderSettingsPage() {
 
   return (
     <div className="min-h-screen relative">
-      <InkBackground intensity="light" />
       
       <header 
         className="sticky top-0 z-10 dao-glass"
