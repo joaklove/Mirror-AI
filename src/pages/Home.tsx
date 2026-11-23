@@ -40,7 +40,7 @@ import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib/daoDaily';
 import { morningReportService, type MorningReportData } from '@/services/morningReportService';
-import { generateEcho, pruneEchoCache } from '@/services/echoService';
+import { generateEcho, getTodayEcho } from '@/services/echoService';
 import type { EchoData } from '@/prompts/echo';
 
 /** 晨报生成的三个仪式阶段 */
@@ -356,7 +356,7 @@ const Home = () => {
   const [reportData, setReportData] = useState<MorningReportData | null>(null);
   const [reportStage, setReportStage] = useState(0);
 
-  // AI 回声：进入首页时补生成，当日缓存命中则不重复调用
+  // AI 回声：按需触发（点「照一照」才生成），当日已有结果只读展示、不自动调用 AI
   const [echoData, setEchoData] = useState<EchoData | null>(null);
   const [echoGenerating, setEchoGenerating] = useState(false);
 
@@ -374,20 +374,11 @@ const Home = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  const echoAttemptedRef = useRef(false);
-
-  // 打开应用时补生成今日回声：entries 就绪后跑一次，命中缓存直接用，静默失败不打扰
+  // 账号就绪时只读一次今日缓存用于展示：纯本地读取，不调用 AI、不显示加载态。
+  // 真正生成只由用户点「照一照」/「再照一次」触发，刷新页面绝不再自动运行。
   useEffect(() => {
-    if (!user || entriesLoading || entries.length === 0 || echoAttemptedRef.current) return;
-    echoAttemptedRef.current = true;
-    pruneEchoCache(user.id);
-    setEchoGenerating(true);
-    const echoNickname = user.email?.split('@')[0] || '你';
-    generateEcho({ entries, userId: user.id, nickname: echoNickname })
-      .then((result) => { if (result) setEchoData(result); })
-      .catch((error) => console.error('Echo generation failed:', error))
-      .finally(() => setEchoGenerating(false));
-  }, [user, entriesLoading, entries]);
+    setEchoData(user ? getTodayEcho(user.id) : null);
+  }, [user]);
 
   // 阶段三：时令彩蛋与修行印记（渲染期不使用随机数）
   const solarTerm = useMemo(() => getSolarTerm(), []);
@@ -645,15 +636,16 @@ const Home = () => {
     }
   };
 
-  const handleRegenerateEcho = async () => {
+  // 按需生成回声：force=false 先查当日缓存（首次「照一照」），force=true 强制重照
+  const handleEcho = async (force: boolean = false) => {
     if (!user) return;
     setEchoGenerating(true);
     try {
       const echoNickname = user.email?.split('@')[0] || '你';
-      const result = await generateEcho({ entries, userId: user.id, nickname: echoNickname, force: true });
+      const result = await generateEcho({ entries, userId: user.id, nickname: echoNickname, force });
       if (result) setEchoData(result);
     } catch (error) {
-      console.error('Echo regenerate failed:', error);
+      console.error('Echo generate failed:', error);
     } finally {
       setEchoGenerating(false);
     }
@@ -1144,14 +1136,51 @@ const Home = () => {
           </Card>
         )}
 
-        {/* AI 回声：进入首页时补生成，找到张力则照见，找不到则沉默 */}
-        {(echoData || echoGenerating) && (
+        {/* AI 回声：按需触发——点「照一照」才生成；已有当日结果静态展示，刷新不再自动运行 */}
+        {echoGenerating ? (
           <EchoCard
-            data={echoData || { type: 'silence', content: '', sourceIds: [] }}
-            generating={echoGenerating}
-            onRegenerate={handleRegenerateEcho}
+            data={{ type: 'echo', content: '', sourceIds: [] }}
+            generating
+            onRegenerate={() => handleEcho(true)}
             onJump={handleEchoJump}
           />
+        ) : echoData ? (
+          <EchoCard
+            data={echoData}
+            generating={false}
+            onRegenerate={() => handleEcho(true)}
+            onJump={handleEchoJump}
+          />
+        ) : (
+          <Card
+            className="dao-card p-5 mb-8 animate-fade-in-up"
+            style={{ borderLeft: '3px solid hsl(var(--cinnabar))' }}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                style={{ background: 'hsl(var(--paper-yellow))' }}
+              >
+                <Sparkles className="w-5 h-5" style={{ color: 'hsl(var(--cinnabar))' }} />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium mb-2" style={{ color: 'hsl(var(--ink-green))' }}>
+                  回声 · 照见张力
+                </h3>
+                <p className="text-sm leading-relaxed mb-3" style={{ color: 'hsl(var(--mountain-green))' }}>
+                  回望最近的记录，看看过去的自己与今天，有没有呼应与张力。
+                </p>
+                <Button
+                  size="sm"
+                  onClick={() => handleEcho(false)}
+                  disabled={entries.length === 0}
+                  className="btn-primary"
+                >
+                  照一照
+                </Button>
+              </div>
+            </div>
+          </Card>
         )}
 
         {/* 最近记录 */}

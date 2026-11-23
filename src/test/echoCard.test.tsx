@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 // Home 依赖较重，逐个 mock 掉与 EchoContent 无关的服务
 vi.mock('@/services/voiceService', () => ({ voiceService: {} }));
 vi.mock('@/services/morningReportService', () => ({ morningReportService: {} }));
-vi.mock('@/services/echoService', () => ({ generateEcho: vi.fn(), pruneEchoCache: vi.fn() }));
+vi.mock('@/services/echoService', () => ({ generateEcho: vi.fn(), getTodayEcho: vi.fn(() => null) }));
 vi.mock('@/components/InkBackground', () => ({ InkBackground: () => null }));
 vi.mock('@/components/TaijiIcon', () => ({ TaijiIcon: () => null }));
 vi.mock('@/hooks/usePWA', () => ({ usePWA: () => ({}) }));
