@@ -6,6 +6,7 @@ import { createBrowserRouter, RouterProvider} from "react-router-dom";
 import { routers } from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useServiceWorker } from "./hooks/usePWA";
+import { InstallProvider } from "./contexts/InstallContext";
 import './i18n';
 
 const queryClient = new QueryClient({
@@ -32,9 +33,11 @@ const App = () => {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <RouterProvider router={router} />
+          <InstallProvider>
+            <Toaster />
+            <Sonner />
+            <RouterProvider router={router} />
+          </InstallProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>

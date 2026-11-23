@@ -9,9 +9,11 @@ import {
   Plug,
   Settings,
   ChevronDown,
+  Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInstall } from '@/contexts/InstallContext';
 import { TaijiIconSimple } from './TaijiIcon';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +49,8 @@ const navCategories: NavCategory[] = [
       { path: '/tags', label: '标签', icon: Tag },
       { path: '/integrations', label: '第三方集成', icon: Plug },
       { path: '/settings', label: '设置', icon: Settings },
+      // path '#'：安装到桌面（不跳转路由，点击打开安装引导）
+      { path: '#', label: '安装到桌面', icon: Download },
     ],
   },
 ];
@@ -63,6 +67,7 @@ export function Sidebar({ open, onClose, onSignOut, onMouseEnter, onMouseLeave }
   });
   const location = useLocation();
   const { user } = useAuth();
+  const { openInstall } = useInstall();
 
   const toggleCategory = (categoryId: string) => {
     setExpandedCategories(prev => ({
@@ -199,46 +204,63 @@ export function Sidebar({ open, onClose, onSignOut, onMouseEnter, onMouseLeave }
                 )}
               >
                 <div className="pl-4 pt-1 space-y-0.5">
-                  {category.items.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      onClick={onClose}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group',
-                        isItemActive(item.path)
-                          ? 'shadow-soft'
-                          : 'hover:bg-[hsl(var(--paper-yellow))]',
-                      )}
-                      style={{
-                        background: isItemActive(item.path)
-                          ? 'hsl(var(--paper-yellow))'
-                          : 'transparent',
-                        border: isItemActive(item.path)
-                          ? '1px solid hsl(var(--light-ink))'
-                          : '1px solid transparent',
-                      }}
-                    >
-                      <item.icon
-                        className={cn(
-                          'w-4 h-4 transition-colors flex-shrink-0 ml-1',
-                          isItemActive(item.path)
-                            ? 'text-[hsl(var(--cinnabar))]'
-                            : 'text-[hsl(var(--smoke-gray))] group-hover:text-[hsl(var(--ink-green))]'
-                        )}
-                      />
-                      <span
-                        className={cn(
-                          'text-sm',
-                          isItemActive(item.path)
-                            ? 'font-medium text-[hsl(var(--ink-green))]'
-                            : 'text-[hsl(var(--smoke-gray))] group-hover:text-[hsl(var(--ink-green))]'
-                        )}
-                      >
-                        {item.label}
-                      </span>
-                    </Link>
-                  ))}
+                  {category.items.map((item) => {
+                    const isAction = item.path === '#';
+                    const inner = (
+                      <>
+                        <item.icon
+                          className={cn(
+                            'w-4 h-4 transition-colors flex-shrink-0 ml-1',
+                            !isAction && isItemActive(item.path)
+                              ? 'text-[hsl(var(--cinnabar))]'
+                              : 'text-[hsl(var(--smoke-gray))] group-hover:text-[hsl(var(--ink-green))]'
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-sm',
+                            !isAction && isItemActive(item.path)
+                              ? 'font-medium text-[hsl(var(--ink-green))]'
+                              : 'text-[hsl(var(--smoke-gray))] group-hover:text-[hsl(var(--ink-green))]'
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                      </>
+                    );
+                    const cls = cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group w-full text-left',
+                      !isAction && isItemActive(item.path)
+                        ? 'shadow-soft'
+                        : 'hover:bg-[hsl(var(--paper-yellow))]',
+                    );
+                    const sty = {
+                      background: !isAction && isItemActive(item.path)
+                        ? 'hsl(var(--paper-yellow))'
+                        : 'transparent',
+                      border: !isAction && isItemActive(item.path)
+                        ? '1px solid hsl(var(--light-ink))'
+                        : '1px solid transparent',
+                    };
+
+                    if (isAction) {
+                      return (
+                        <button
+                          key={item.label}
+                          onClick={() => { openInstall(); onClose(); }}
+                          className={cls}
+                          style={sty}
+                        >
+                          {inner}
+                        </button>
+                      );
+                    }
+                    return (
+                      <Link key={item.path} to={item.path} onClick={onClose} className={cls} style={sty}>
+                        {inner}
+                      </Link>
+                    );
+                  })}
                 </div>
               </div>
             </div>

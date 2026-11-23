@@ -20,7 +20,8 @@ import {
   Volume2,
   Sunrise,
   Settings,
-  LogOut
+  LogOut,
+  Download
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -30,6 +31,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { useToast } from '@/hooks/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { useAuth } from '@/contexts/AuthContext';
+import { useInstall } from '@/contexts/InstallContext';
 import { journalService, type JournalEntry } from '@/services/journalService';
 import { tagService } from '@/services/tagService';
 import { quickAnalysisService } from '@/services/quickAnalysisService';
@@ -329,6 +331,7 @@ export const EchoCard: React.FC<EchoCardProps> = ({ data, generating, onRegenera
 
 const Home = () => {
   const { user, signOut, loading: authLoading } = useAuth();
+  const { openInstall } = useInstall();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -727,31 +730,47 @@ const Home = () => {
       
       <main className="py-8 pb-32 relative z-10 max-w-4xl mx-auto px-4">
         {/* 顶部问候语 */}
-        <div className="mb-5 animate-fade-in-up">
-          <p 
-            className="text-lg"
-            style={{ 
-              color: 'hsl(var(--mountain-green))',
-              fontFamily: 'var(--font-serif)',
+        <div className="mb-5 animate-fade-in-up flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p
+              className="text-lg"
+              style={{
+                color: 'hsl(var(--mountain-green))',
+                fontFamily: 'var(--font-serif)',
+              }}
+            >
+              {new Date().getHours() < 12 ? '早安，' : new Date().getHours() < 18 ? '午安，' : '晚安，'}
+              <span style={{ color: 'hsl(var(--ink-green))' }}>
+                {user?.email?.split('@')[0] || '朋友'}
+              </span>
+            </p>
+            <p
+              className="text-sm mt-1 animate-verse-breathe"
+              style={{ color: 'hsl(var(--smoke-gray))' }}
+            >
+              「{verse}」
+            </p>
+            <p
+              className="text-xs mt-2"
+              style={{ color: 'hsl(var(--stone-green))' }}
+            >
+              {shichen.name} · {shichen.phrase}　｜　{shichen.egg}
+            </p>
+          </div>
+          {/* 安装到桌面入口：小众浏览器也能找到 */}
+          <button
+            onClick={openInstall}
+            aria-label="安装到桌面"
+            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full transition-transform hover:scale-105 active:scale-95"
+            style={{
+              background: 'hsl(var(--paper-yellow))',
+              border: '1px solid hsl(var(--light-ink))',
+              color: 'hsl(var(--ink-green))',
             }}
           >
-            {new Date().getHours() < 12 ? '早安，' : new Date().getHours() < 18 ? '午安，' : '晚安，'}
-            <span style={{ color: 'hsl(var(--ink-green))' }}>
-              {user?.email?.split('@')[0] || '朋友'}
-            </span>
-          </p>
-          <p
-            className="text-sm mt-1 animate-verse-breathe"
-            style={{ color: 'hsl(var(--smoke-gray))' }}
-          >
-            「{verse}」
-          </p>
-          <p
-            className="text-xs mt-2"
-            style={{ color: 'hsl(var(--stone-green))' }}
-          >
-            {shichen.name} · {shichen.phrase}　｜　{shichen.egg}
-          </p>
+            <Download className="w-3.5 h-3.5" style={{ color: 'hsl(var(--cinnabar))' }} />
+            <span className="text-xs">装到桌面</span>
+          </button>
         </div>
 
         {/* 时令签 + 修行印记（阶段三） */}
