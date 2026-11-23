@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -13,76 +13,63 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  // 创建模拟用户数据的函数
-  // 使用固定的 user_id，确保数据持久化
-  const createMockUser = (email: string): User => ({
-    id: 'mock-user-id',  // 保持固定 user_id，这样数据才能持久化
-    email,
-    phone: null,
-    email_confirmed_at: new Date().toISOString(),
-    phone_confirmed_at: null,
-    confirmed_at: new Date().toISOString(),
-    last_sign_in_at: new Date().toISOString(),
-    app_metadata: { provider: 'email', providers: ['email'] },
-    user_metadata: { full_name: 'Mock User', avatar_url: null },
-    identities: [],
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString()
-  });
-  
-  // 立即返回模拟用户，不使用异步操作
-  const [user, setUser] = useState<User | null>(createMockUser('user@example.com'));
-  const [loading, setLoading] = useState(false);
+  // 真实 Supabase 认证：未登录时 user 为 null，由 ProtectedRoute 跳登录页。
+  // 页面显示的身份与写库校验的身份（auth.getUser）必须是同一个，否则会出现
+  // "页面看似已登录、写库却被 RLS 拒绝"的矛盾。
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // 直接设置为已加载状态
-    setLoading(false);
+    let alive = true;
 
-    // 在实际应用中，这里会使用真实的 Supabase 认证
-    /*
-    // Check active session
+    // 读取已有会话（刷新后保持登录）
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!alive) return;
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    // Listen for auth changes
+    // 监听登录/登出/令牌刷新
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
-    */
+    return () => {
+      alive = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
-    // 登录成功后设置用户状态，使用用户输入的邮箱
-    setUser(createMockUser(email));
+    // 用 Supabase 返回的真实用户（含真实 id），onAuthStateChange 也会同步
+    setUser(data.user);
   };
 
-  const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string): Promise<{ needsConfirmation: boolean }> => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
     if (error) throw error;
-    // 注册成功后自动登录，设置用户状态，使用用户输入的邮箱
-    setUser(createMockUser(email));
+    // 若项目开启了邮箱确认，注册后没有 session，此时 data.user 存在但无法写库。
+    // 交由调用方按 session 是否存在给出提示，不在这里伪造登录态。
+    const needsConfirmation = !data.session;
+    setUser(data.session?.user ?? null);
+    return { needsConfirmation };
   };
 
   const signOut = async () => {
-    // 清除本地用户状态
-    setUser(null);
-    // 调用 Supabase 登出（如果使用真实认证）
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
+    setUser(null);
   };
 
   return (

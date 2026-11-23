@@ -1,4 +1,4 @@
-import { settingsService } from './journalService';
+import { chat, fill } from './aiClient';
 
 /**
  * 标签建议提示词 · 分类器（非人格化）
@@ -43,14 +43,7 @@ const TAG_SUGGESTION_USER = `【标签池 —— 只能从这里选】
 1. 从标签池里挑 1-3 个最贴合记录的标签,优先选与用户维度对应的那一类。
 2. 每个标签都必须在记录内容里有依据,记录里没体现的不要选。
 3. 只返回标签本身,用逗号分隔(例如:平静,感恩),不要编号、不要解释、不要引号。
-4. 如果记录内容太短或与所有标签都不相符,就返回「日常」。`;
-
-/** 安全的占位符替换：用函数形式，避免内容中的 $& $' 等被当作替换模式 */
-function fill(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
-    Object.prototype.hasOwnProperty.call(values, key) ? values[key] : match
-  );
-}
+4. 如果记录内容太短或与所有标签都不相符,就返回「日常」。`
 
 export interface TagSuggestionResult {
   tags: string[];
@@ -58,52 +51,25 @@ export interface TagSuggestionResult {
 
 export const tagService = {
   async suggestTags(content: string, dimension: string): Promise<string[]> {
-    try {
-      const settings = await settingsService.getSettings();
+    const prompt = fill(TAG_SUGGESTION_USER, {
+      pool: poolText(),
+      content,
+      dimension,
+    });
 
-      const prompt = fill(TAG_SUGGESTION_USER, {
-        pool: poolText(),
-        content,
-        dimension,
-      });
+    const text = await chat({
+      system: TAG_SUGGESTION_SYSTEM,
+      user: prompt,
+      maxTokens: 100,
+      temperature: 0.3,
+    });
 
-      const response = await fetch(`${settings?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${settings?.apiKey || ''}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Mirror AI',
-        },
-        body: JSON.stringify({
-          model: settings?.model || 'deepseek/deepseek-chat',
-          messages: [
-            { role: 'system', content: TAG_SUGGESTION_SYSTEM },
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: 100,
-          temperature: 0.3,
-        }),
-      });
+    const tags = (text || '')
+      .split(/[,，、\n]/)
+      .map(t => t.trim().replace(/^["'「『]|["'」』]$/g, ''))
+      .filter(t => t.length > 0 && (ALL_TAGS.has(t) || t === '日常'))
+      .slice(0, 3);
 
-      if (!response.ok) {
-        console.error('AI tag suggestion failed:', response.status);
-        return [];
-      }
-
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
-
-      const tags = text
-        .split(/[,，、\n]/)
-        .map(t => t.trim().replace(/^["'「『]|["'」』]$/g, ''))
-        .filter(t => t.length > 0 && (ALL_TAGS.has(t) || t === '日常'))
-        .slice(0, 3);
-
-      return tags;
-    } catch (error) {
-      console.error('Error suggesting tags:', error);
-      return [];
-    }
+    return tags;
   },
 };

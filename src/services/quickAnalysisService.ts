@@ -1,4 +1,4 @@
-import { settingsService } from './journalService';
+import { chat, fill } from './aiClient';
 
 /**
  * 即时洞察提示词 · 禅意克制人格
@@ -23,54 +23,19 @@ const QUICK_ANALYSIS_USER = `【用户刚写下的记录】
 4. 不要使用 emoji,不要「亲爱的」「朋友呀」这类称呼,不做心理诊断。
 5. 直接输出结果文字,不要任何前言、标注或引号。`;
 
-/** 安全的占位符替换：用函数形式，避免内容中的 $& $' 等被当作替换模式 */
-function fill(template: string, values: Record<string, string>): string {
-  return template.replace(/\{(\w+)\}/g, (match, key: string) =>
-    Object.prototype.hasOwnProperty.call(values, key) ? values[key] : match
-  );
-}
-
 export interface QuickAnalysisResult {
   analysis: string;
 }
 
 export const quickAnalysisService = {
   async analyze(content: string): Promise<string> {
-    try {
-      const settings = await settingsService.getSettings();
-      const prompt = fill(QUICK_ANALYSIS_USER, { content });
-
-      const response = await fetch(`${settings?.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${settings?.apiKey || ''}`,
-          'HTTP-Referer': window.location.origin,
-          'X-Title': 'Mirror AI',
-        },
-        body: JSON.stringify({
-          model: settings?.model || 'deepseek/deepseek-chat',
-          messages: [
-            { role: 'system', content: QUICK_ANALYSIS_SYSTEM },
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: 150,
-          temperature: 0.75,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Quick analysis failed:', response.status);
-        return '';
-      }
-
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || '';
-
-      return text.trim();
-    } catch (error) {
-      console.error('Error in quick analysis:', error);
-      return '';
-    }
+    const prompt = fill(QUICK_ANALYSIS_USER, { content });
+    const text = await chat({
+      system: QUICK_ANALYSIS_SYSTEM,
+      user: prompt,
+      maxTokens: 150,
+      temperature: 0.75,
+    });
+    return (text || '').trim();
   },
 };

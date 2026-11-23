@@ -112,8 +112,10 @@ export default function AISettings() {
       });
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
-    } catch {
-      setTest({ status: 'fail', message: '保存失败，请检查网络或重新登录后再试' });
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error('保存配置失败:', err);
+      setTest({ status: 'fail', message: `保存失败：${detail}` });
     } finally {
       setSaving(false);
     }

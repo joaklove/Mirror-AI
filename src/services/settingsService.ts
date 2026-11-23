@@ -2,6 +2,7 @@ import { supabase } from '../integrations/supabase/client';
 import type { Database } from '../integrations/supabase/types';
 
 type UserSettingsRow = Database['public']['Tables']['user_settings']['Row'];
+type UserSettingsInsert = Database['public']['Tables']['user_settings']['Insert'];
 
 export interface UserSettings {
   ai_api_key?: string | null;
@@ -38,17 +39,25 @@ class SettingsService {
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    
-    if (!user) throw new Error('User not authenticated');
 
-    const { error } = await supabase.from('user_settings').upsert({
+    if (!user) throw new Error('当前未登录，请先登录 Mirror AI 账号再保存配置');
+
+    // 只提交本次真正要写的列：undefined 的字段不进 payload，避免把未提交的列
+    // （如飞书 webhook）清成 null。旧写法 feishu_webhook + ...settings 会带进意外字段。
+    const payload: UserSettingsInsert = {
       user_id: user.id,
-      ai_api_key: settings.ai_api_key,
-      ai_base_url: settings.ai_base_url,
-      ai_model: settings.ai_model,
-      feishu_webhook: settings.feishu_webhook,
-      ...settings,
-    });
+      ...(settings.ai_api_key !== undefined && { ai_api_key: settings.ai_api_key }),
+      ...(settings.ai_base_url !== undefined && { ai_base_url: settings.ai_base_url }),
+      ...(settings.ai_model !== undefined && { ai_model: settings.ai_model }),
+      ...(settings.feishu_webhook !== undefined && { feishu_webhook: settings.feishu_webhook }),
+    };
+
+    // onConflict 必须指定 user_id：表的唯一键是 user_id，主键是 id。
+    // 不指定时 PostgREST 按 id 冲突处理，payload 又没带 id → 走 INSERT →
+    // 撞上 user_id 唯一约束 → 保存失败。这是此前保存报错的根因。
+    const { error } = await supabase
+      .from('user_settings')
+      .upsert(payload, { onConflict: 'user_id' });
 
     if (error) throw error;
   }

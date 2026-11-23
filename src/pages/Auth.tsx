@@ -15,6 +15,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
@@ -33,6 +34,7 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotice('');
 
     if (!validateEmail(email)) {
       setError('请输入有效的邮箱地址');
@@ -53,9 +55,15 @@ const Auth = () => {
         AuthEvents.signIn('email');
         PostHogAuthEvents.signIn('email');
       } else {
-        await signUp(email, password);
+        const result = await signUp(email, password);
         AuthEvents.signUp('email');
         PostHogAuthEvents.signUp('email');
+        // 开启邮箱确认时注册不会产生会话，此时跳首页会被登录守卫弹回，
+        // 停留在本页并提示用户去邮箱点确认链接。
+        if (result.needsConfirmation) {
+          setNotice('注册成功，请先去邮箱点击确认链接，再回来登录。');
+          return;
+        }
       }
       navigate('/');
     } catch (err) {
@@ -172,6 +180,19 @@ const Auth = () => {
             </div>
           )}
 
+          {notice && (
+            <div
+              className="rounded-lg p-3 text-sm animate-fade-in-up"
+              style={{
+                background: 'hsla(168,60%,40%,0.1)',
+                border: '1px solid hsla(168,60%,40%,0.3)',
+                color: 'hsl(168,60%,34%)',
+              }}
+            >
+              {notice}
+            </div>
+          )}
+
           <Button
             type="submit"
             disabled={loading}
@@ -200,6 +221,7 @@ const Auth = () => {
             onClick={() => {
               setIsLogin(!isLogin);
               setError('');
+              setNotice('');
             }}
             className="ml-1 font-medium transition-colors"
             style={{ color: 'hsl(var(--cinnabar))' }}

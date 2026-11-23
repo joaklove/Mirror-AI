@@ -1,4 +1,4 @@
-import { settingsService } from './journalService';
+import { chat, getAiSettings, parseJson } from './aiClient';
 import type { JournalEntry } from './journalService';
 import {
   buildMorningReportPrompt,
@@ -43,25 +43,10 @@ function formatEntries(entries: JournalEntry[]): string {
 
 /** 解析模型返回，兼容 JSON 代码块 / 纯文本两种形态 */
 function parseReport(raw: string): MorningReportData {
-  let text = raw.trim();
-  // 去掉可能的 ```json ... ``` 包裹
-  const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence) text = fence[1].trim();
-
-  try {
-    const obj = JSON.parse(text);
-    return {
-      greeting: String(obj.greeting || ''),
-      mood: String(obj.mood || ''),
-      highlights: Array.isArray(obj.highlights)
-        ? obj.highlights.map((h: unknown) => String(h))
-        : [],
-      insight: String(obj.insight || ''),
-      suggestion: String(obj.suggestion || ''),
-      closing: String(obj.closing || ''),
-    };
-  } catch {
+  const obj = parseJson<Record<string, unknown>>(raw);
+  if (!obj) {
     // 模型没按 JSON 输出时，退化为纯文本放进 mood，保证界面不空白
+    const text = raw.trim().replace(/^```(?:json)?\s*|\s*```$/g, '').trim();
     return {
       greeting: '',
       mood: text,
@@ -71,6 +56,16 @@ function parseReport(raw: string): MorningReportData {
       closing: '',
     };
   }
+  return {
+    greeting: String(obj.greeting || ''),
+    mood: String(obj.mood || ''),
+    highlights: Array.isArray(obj.highlights)
+      ? obj.highlights.map((h: unknown) => String(h))
+      : [],
+    insight: String(obj.insight || ''),
+    suggestion: String(obj.suggestion || ''),
+    closing: String(obj.closing || ''),
+  };
 }
 
 /** 无记录 / API 未配置时的禅意降级文案（保证按钮永远有反馈） */
@@ -115,8 +110,8 @@ export const morningReportService = {
       .filter((e) => isToday(e.timestamp, now))
       .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-    const settings = await settingsService.getSettings();
-    if (!settings?.apiKey) {
+    const settings = await getAiSettings();
+    if (!settings) {
       return fallbackReport('no-key', nickname);
     }
 
@@ -136,41 +131,16 @@ export const morningReportService = {
       entries: formatEntries(todayEntries),
     });
 
-    try {
-      const response = await fetch(
-        `${settings.baseUrl || 'https://openrouter.ai/api/v1'}/chat/completions`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${settings.apiKey}`,
-            'HTTP-Referer': window.location.origin,
-            'X-Title': 'Mirror AI',
-          },
-          body: JSON.stringify({
-            model: settings.model || 'deepseek/deepseek-chat',
-            messages: [{ role: 'user', content: prompt }],
-            response_format: { type: 'json_object' },
-            temperature: 0.75,
-            max_tokens: 700,
-          }),
-        }
-      );
+    const content = await chat({
+      user: prompt,
+      jsonMode: true,
+      temperature: 0.75,
+      maxTokens: 700,
+      settings,
+    });
 
-      if (!response.ok) {
-        console.error('Morning report failed:', response.status);
-        return fallbackReport('error', nickname);
-      }
-
-      const data = await response.json();
-      const content = data.choices?.[0]?.message?.content || '';
-      if (!content) return fallbackReport('error', nickname);
-
-      return parseReport(content);
-    } catch (error) {
-      console.error('Error in morning report:', error);
-      return fallbackReport('error', nickname);
-    }
+    if (!content) return fallbackReport('error', nickname);
+    return parseReport(content);
   },
 };
 

@@ -40,6 +40,8 @@ import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib/daoDaily';
 import { morningReportService, type MorningReportData } from '@/services/morningReportService';
+import { generateEcho, pruneEchoCache } from '@/services/echoService';
+import type { EchoData } from '@/prompts/echo';
 
 /** 晨报生成的三个仪式阶段 */
 const RITUAL_STAGES = [
@@ -155,7 +157,8 @@ const JournalEntryCard: React.FC<JournalEntryCardProps> = ({
   
   return (
     <Card 
-      className="dao-card p-5 group animate-fade-in-up"
+      id={`journal-entry-${entry.id}`}
+      className="dao-card p-5 group animate-fade-in-up scroll-mt-24"
       style={{ animationDelay: '0.2s' }}
     >
       <div className="flex items-start gap-4">
@@ -239,6 +242,91 @@ const JournalEntryCard: React.FC<JournalEntryCardProps> = ({
   );
 };
 
+/** 把回声正文里的 [note:xxx] 渲染成可点击溯源标记，点击滚动到对应笔记 */
+export const EchoContent: React.FC<{ content: string; onJump: (id: string) => void }> = ({ content, onJump }) => {
+  const parts = content.split(/(\[note:[^\]]+\])/g);
+  return (
+    <>
+      {parts.map((part, i) => {
+        const match = part.match(/^\[note:([^\]]+)\]$/);
+        if (match) {
+          return (
+            <button
+              key={i}
+              onClick={() => onJump(match[1])}
+              className="inline-flex items-center px-1.5 py-0.5 mx-0.5 rounded-full text-xs align-baseline transition-transform hover:scale-110"
+              style={{
+                background: 'hsl(var(--paper-yellow))',
+                color: 'hsl(var(--cinnabar))',
+                border: '1px solid hsl(var(--cinnabar))',
+              }}
+              title="跳到这条笔记"
+            >
+              溯源
+            </button>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </>
+  );
+};
+
+interface EchoCardProps {
+  data: EchoData;
+  generating: boolean;
+  onRegenerate: () => void;
+  onJump: (id: string) => void;
+}
+
+export const EchoCard: React.FC<EchoCardProps> = ({ data, generating, onRegenerate, onJump }) => {
+  const isSilent = data.type === 'silence';
+  const label = data.type === 'echo' ? '回声 · 照见张力' : data.type === 'observation' ? '回声 · 温和观察' : '回声';
+
+  return (
+    <Card
+      className="dao-card p-5 mb-8 animate-fade-in-up"
+      style={{ borderLeft: '3px solid hsl(var(--cinnabar))' }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ background: 'hsl(var(--paper-yellow))' }}
+        >
+          <Sparkles className="w-5 h-5" style={{ color: 'hsl(var(--cinnabar))' }} />
+        </div>
+        <div className="flex-1">
+          <h3 className="font-medium mb-2" style={{ color: 'hsl(var(--ink-green))' }}>
+            {label}
+          </h3>
+          {generating ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" style={{ color: 'hsl(var(--cinnabar))' }} />
+              <span className="text-sm" style={{ color: 'hsl(var(--smoke-gray))' }}>镜正在回望你的足迹...</span>
+            </div>
+          ) : isSilent ? (
+            <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--mountain-green))' }}>
+              今日尚无可照见的呼应。继续写，镜子会越来越清晰。
+            </p>
+          ) : (
+            <p className="text-sm leading-relaxed" style={{ color: 'hsl(var(--mountain-green))' }}>
+              <EchoContent content={data.content} onJump={onJump} />
+            </p>
+          )}
+          <button
+            onClick={onRegenerate}
+            disabled={generating}
+            className="mt-3 text-xs hover:underline disabled:opacity-50"
+            style={{ color: 'hsl(var(--smoke-gray))' }}
+          >
+            再照一次
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+};
+
 const Home = () => {
   const { user, signOut, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -268,6 +356,10 @@ const Home = () => {
   const [reportData, setReportData] = useState<MorningReportData | null>(null);
   const [reportStage, setReportStage] = useState(0);
 
+  // AI 回声：进入首页时补生成，当日缓存命中则不重复调用
+  const [echoData, setEchoData] = useState<EchoData | null>(null);
+  const [echoGenerating, setEchoGenerating] = useState(false);
+
   // 微动效状态
   const [verse] = useState(() => ['心静自然凉', '万物静观皆自得', '行到水穷处，坐看云起时', '道法自然'][Math.floor(Math.random() * 4)]);
   const [rippleKey, setRippleKey] = useState(0);
@@ -281,6 +373,21 @@ const Home = () => {
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
   });
+
+  const echoAttemptedRef = useRef(false);
+
+  // 打开应用时补生成今日回声：entries 就绪后跑一次，命中缓存直接用，静默失败不打扰
+  useEffect(() => {
+    if (!user || entriesLoading || entries.length === 0 || echoAttemptedRef.current) return;
+    echoAttemptedRef.current = true;
+    pruneEchoCache(user.id);
+    setEchoGenerating(true);
+    const echoNickname = user.email?.split('@')[0] || '你';
+    generateEcho({ entries, userId: user.id, nickname: echoNickname })
+      .then((result) => { if (result) setEchoData(result); })
+      .catch((error) => console.error('Echo generation failed:', error))
+      .finally(() => setEchoGenerating(false));
+  }, [user, entriesLoading, entries]);
 
   // 阶段三：时令彩蛋与修行印记（渲染期不使用随机数）
   const solarTerm = useMemo(() => getSolarTerm(), []);
@@ -535,6 +642,29 @@ const Home = () => {
   const confirmDelete = async () => {
     if (entryToDelete) {
       await deleteEntryMutation.mutateAsync(entryToDelete);
+    }
+  };
+
+  const handleRegenerateEcho = async () => {
+    if (!user) return;
+    setEchoGenerating(true);
+    try {
+      const echoNickname = user.email?.split('@')[0] || '你';
+      const result = await generateEcho({ entries, userId: user.id, nickname: echoNickname, force: true });
+      if (result) setEchoData(result);
+    } catch (error) {
+      console.error('Echo regenerate failed:', error);
+    } finally {
+      setEchoGenerating(false);
+    }
+  };
+
+  const handleEchoJump = (noteId: string) => {
+    const el = document.getElementById(`journal-entry-${noteId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-[hsl(var(--cinnabar))]');
+      window.setTimeout(() => el.classList.remove('ring-2', 'ring-[hsl(var(--cinnabar))]'), 2000);
     }
   };
 
@@ -1012,6 +1142,16 @@ const Home = () => {
               </div>
             </div>
           </Card>
+        )}
+
+        {/* AI 回声：进入首页时补生成，找到张力则照见，找不到则沉默 */}
+        {(echoData || echoGenerating) && (
+          <EchoCard
+            data={echoData || { type: 'silence', content: '', sourceIds: [] }}
+            generating={echoGenerating}
+            onRegenerate={handleRegenerateEcho}
+            onJump={handleEchoJump}
+          />
         )}
 
         {/* 最近记录 */}
