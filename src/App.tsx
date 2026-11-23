@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider} from "react-router-dom";
 import { routers } from "./router";
 import ErrorBoundary from "./components/ErrorBoundary";
+import { useServiceWorker } from "./hooks/usePWA";
 import './i18n';
 
 const queryClient = new QueryClient({
@@ -24,6 +25,8 @@ const queryClient = new QueryClient({
 });
 
 const App = () => {
+  // 无条件注册 Service Worker：让 PWA 可被安装、支持离线与更新提示
+  useServiceWorker();
   const router = createBrowserRouter(routers);
   return (
     <ErrorBoundary>

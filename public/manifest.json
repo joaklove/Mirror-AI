@@ -29,17 +29,17 @@
   "screenshots": [],
   "shortcuts": [
     {
-      "name": "记录",
+      "name": "写记录",
       "short_name": "记录",
-      "description": "快速记录想法",
-      "url": "/record",
+      "description": "打开首页快速记录想法",
+      "url": "/?compose=1",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     },
     {
-      "name": "分析",
-      "short_name": "分析",
-      "description": "查看分析报告",
-      "url": "/analysis",
+      "name": "设置",
+      "short_name": "设置",
+      "description": "打开设置页",
+      "url": "/settings",
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ]
