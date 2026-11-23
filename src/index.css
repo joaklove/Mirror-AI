@@ -849,3 +849,50 @@ body,
   width: 100%;
   height: 100%;
 }
+
+/* ============ 移动端增强（C 档） ============ */
+
+/* 底部 Tab 栏：固定 + 安全区（iPhone 底部横条） */
+.mobile-tab-bar {
+  height: calc(56px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: hsl(var(--card) / 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid hsl(var(--light-ink));
+}
+
+/* 手机端主内容：给底部 Tab 留出空间 */
+.mobile-main-pad {
+  padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 手机端 FAB 上移，避开底部 Tab */
+.mobile-fab-up {
+  bottom: calc(76px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* 下拉刷新提示 */
+.pull-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: height 0.15s ease;
+  color: hsl(var(--smoke-gray));
+  font-size: 12px;
+}
+
+/* 大字体模式：root font-size 由 useFontScale 等比缩放（Tailwind rem 单位全局生效）。
+   class 仅作状态标记，供需要单独微调的元素选用，不再二次放大正文以免叠加。 */
+html.font-large .mobile-tab-bar span,
+html.font-xlarge .mobile-tab-bar span { font-size: 12px; }
+
+/* 手机端三页显隐：桌面端无 data-mobile-layout，所有区块照常显示 */
+[data-mobile-layout="1"] [data-mobile-page] { display: none; }
+[data-mobile-layout="1"][data-active-tab="record"] [data-mobile-page="record"],
+[data-mobile-layout="1"][data-active-tab="reflect"] [data-mobile-page="reflect"],
+[data-mobile-layout="1"][data-active-tab="me"] [data-mobile-page="me"],
+[data-mobile-layout="1"][data-active-tab="me"] [data-mobile-page="me-extra"] {
+  display: block;
+}

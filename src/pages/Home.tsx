@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -21,7 +21,11 @@ import {
   Sunrise,
   Settings,
   LogOut,
-  Download
+  Download,
+  UserRound,
+  Tag,
+  Plug,
+  ChevronRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,6 +48,9 @@ import { getSolarTerm, getShichen, getJournalStreak, STREAK_BADGES } from '@/lib
 import { morningReportService, type MorningReportData } from '@/services/morningReportService';
 import { generateEcho, getTodayEcho } from '@/services/echoService';
 import type { EchoData } from '@/prompts/echo';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useFontScale, useDraft, usePullToRefresh, haptic } from '@/hooks/useMobileEnhancements';
+import { MobileTabBar, type MobileTab } from '@/components/MobileTabBar';
 
 /** 晨报生成的三个仪式阶段 */
 const RITUAL_STAGES = [
@@ -337,10 +344,16 @@ const Home = () => {
   const queryClient = useQueryClient();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
-  // 记录相关状态
+
+  // 移动端增强（C 档）：手机检测、大字体、离线草稿
+  const isMobile = useIsMobile();
+  const { scale: fontScale, setScale: setFontScale } = useFontScale();
+  const draft = useDraft(user?.id || 'anon');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('record');
+
+  // 记录相关状态：初始值来自离线草稿（刷新/重开不丢未存的内容）
   const [selectedDimension, setSelectedDimension] = useState<Dimension>('psychology');
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(() => draft.draft);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [images, setImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -383,6 +396,20 @@ const Home = () => {
     setEchoData(user ? getTodayEcho(user.id) : null);
   }, [user]);
 
+  // 离线草稿：输入内容自动存本地，保存成功后由 onSuccess 调 draft.clear() 清除
+  useEffect(() => {
+    draft.save(content);
+    // draft.save 是稳定回调（依赖 storageKey），只会随 user 变化重建一次
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
+
+  // 下拉刷新：手机端在页面顶部下拉可刷新记录与回望数据
+  const handlePullRefresh = useCallback(async () => {
+    await queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
+    setEchoData(user ? getTodayEcho(user.id) : null);
+  }, [queryClient, user]);
+  const { pulling: isPulling, distance: pullDistance } = usePullToRefresh(handlePullRefresh);
+
   // 阶段三：时令彩蛋与修行印记（渲染期不使用随机数）
   const solarTerm = useMemo(() => getSolarTerm(), []);
   const shichen = useMemo(() => getShichen(), []);
@@ -416,6 +443,8 @@ const Home = () => {
       queryClient.invalidateQueries({ queryKey: ['journal-entries'] });
       const savedContent = content;
       setContent('');
+      draft.clear();
+      haptic(15);
       setSelectedTags([]);
       setImages([]);
       setShowQuickAnalysis(true);
@@ -725,10 +754,26 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen relative" data-season={solarTerm.season}>
+    <div
+      className="min-h-screen relative"
+      data-season={solarTerm.season}
+      data-active-tab={mobileTab}
+      data-mobile-layout={isMobile ? '1' : undefined}
+    >
       <InkBackground intensity="light" />
-      
-      <main className="py-8 pb-32 relative z-10 max-w-4xl mx-auto px-4">
+
+      {/* 下拉刷新指示（仅手机端） */}
+      {isMobile && (
+        <div
+          className="pull-indicator fixed left-0 right-0 z-20 pointer-events-none"
+          style={{ top: 'calc(56px + env(safe-area-inset-top, 0px))', height: isPulling ? pullDistance : 0 }}
+          aria-hidden="true"
+        >
+          <span>{pullDistance >= 72 ? '松开即可刷新' : isPulling ? '继续下拉…' : ''}</span>
+        </div>
+      )}
+
+      <main className={cn('py-8 pb-32 relative z-10 max-w-4xl mx-auto px-4', isMobile && 'mobile-main-pad')}>
         {/* 顶部问候语 */}
         <div className="mb-5 animate-fade-in-up flex items-start justify-between gap-3">
           <div className="min-w-0">
@@ -757,11 +802,14 @@ const Home = () => {
               {shichen.name} · {shichen.phrase}　｜　{shichen.egg}
             </p>
           </div>
-          {/* 安装到桌面入口：小众浏览器也能找到 */}
+          {/* 安装到桌面入口：手机端只在默认「记录」页显示，避免与「我的」页入口重复 */}
           <button
             onClick={openInstall}
             aria-label="安装到桌面"
-            className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full transition-transform hover:scale-105 active:scale-95"
+            className={cn(
+              'flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-full transition-transform hover:scale-105 active:scale-95',
+              isMobile && mobileTab !== 'record' && 'hidden'
+            )}
             style={{
               background: 'hsl(var(--paper-yellow))',
               border: '1px solid hsl(var(--light-ink))',
@@ -773,7 +821,8 @@ const Home = () => {
           </button>
         </div>
 
-        {/* 时令签 + 修行印记（阶段三） */}
+        {/* 时令签 + 修行印记（阶段三）· 手机端归入「我的」页 */}
+        <div data-mobile-page="me">
         <div
           className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-fade-in-up"
           style={{ animationDelay: '0.15s' }}
@@ -842,8 +891,10 @@ const Home = () => {
             </div>
           </Card>
         </div>
+        </div>{/* /data-mobile-page=me */}
 
-        {/* 记录卡片 */}
+        {/* 记录卡片 · 手机端归入「记录」页 */}
+        <div data-mobile-page="record">
         <Card
           className="dao-card p-5 mb-8 animate-fade-in-up"
           style={{ animationDelay: '0.1s', position: 'relative' }}
@@ -1155,6 +1206,11 @@ const Home = () => {
           </Card>
         )}
 
+        </div>{/* /data-mobile-page=record */}
+
+        {/* 回声 + 最近记录 · 手机端归入「回望」页（溯源跳转依赖两者同页 DOM） */}
+        <div data-mobile-page="reflect">
+
         {/* AI 回声：按需触发——点「照一照」才生成；已有当日结果静态展示，刷新不再自动运行 */}
         {echoGenerating ? (
           <EchoCard
@@ -1260,10 +1316,103 @@ const Home = () => {
             </div>
           )}
         </div>
+        </div>{/* /data-mobile-page=reflect */}
+
+        {/* 「我的」页专属：账号、大字体、设置入口、登出（仅手机端） */}
+        {isMobile && (
+          <div data-mobile-page="me-extra" className="animate-fade-in-up">
+            <Card className="dao-card p-5 mb-4">
+              <div className="flex items-center gap-3 mb-5">
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'hsl(var(--paper-yellow))', border: '1px solid hsl(var(--light-ink))' }}
+                >
+                  <UserRound className="w-6 h-6" style={{ color: 'hsl(var(--cinnabar))' }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="font-medium truncate" style={{ color: 'hsl(var(--ink-green))' }}>
+                    {user?.email?.split('@')[0] || '朋友'}
+                  </p>
+                  <p className="text-xs truncate" style={{ color: 'hsl(var(--smoke-gray))' }}>
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+
+              {/* 大字体切换 */}
+              <div className="mb-4">
+                <p className="text-sm mb-2" style={{ color: 'hsl(var(--mountain-green))' }}>文字大小</p>
+                <div className="flex gap-2">
+                  {([['normal', '标准'], ['large', '大'], ['xlarge', '特大']] as const).map(([val, label]) => (
+                    <button
+                      key={val}
+                      onClick={() => { setFontScale(val); haptic(8); }}
+                      className={cn(
+                        'flex-1 py-2 rounded-lg text-sm transition-colors',
+                        fontScale === val ? 'btn-primary' : ''
+                      )}
+                      style={fontScale === val ? undefined : {
+                        background: 'hsl(var(--paper-yellow))',
+                        color: 'hsl(var(--mountain-green))',
+                        border: '1px solid hsl(var(--light-ink))',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* 功能入口 */}
+              <div className="space-y-2">
+                {[
+                  { label: '标签管理', to: '/tags', icon: Tag },
+                  { label: '第三方集成', to: '/integrations', icon: Plug },
+                  { label: '设置', to: '/settings', icon: Settings },
+                ].map((item) => (
+                  <button
+                    key={item.to}
+                    onClick={() => { haptic(8); navigate(item.to); }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm"
+                    style={{ background: 'hsl(var(--paper-yellow))', color: 'hsl(var(--ink-green))' }}
+                  >
+                    <item.icon className="w-4 h-4" style={{ color: 'hsl(var(--cinnabar))' }} />
+                    {item.label}
+                    <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'hsl(var(--smoke-gray))' }} />
+                  </button>
+                ))}
+                <button
+                  onClick={() => { haptic(8); openInstall(); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm"
+                  style={{ background: 'hsl(var(--paper-yellow))', color: 'hsl(var(--ink-green))' }}
+                >
+                  <Download className="w-4 h-4" style={{ color: 'hsl(var(--cinnabar))' }} />
+                  装到桌面
+                  <ChevronRight className="w-4 h-4 ml-auto" style={{ color: 'hsl(var(--smoke-gray))' }} />
+                </button>
+              </div>
+            </Card>
+
+            <button
+              onClick={async () => {
+                const ok = window.confirm('确定要退出登录吗？');
+                if (!ok) return;
+                haptic(8);
+                await signOut();
+                navigate('/auth');
+              }}
+              className="w-full py-3 rounded-lg text-sm mb-4"
+              style={{ color: '#b91c1c', border: '1px solid hsl(var(--light-ink))' }}
+            >
+              退出登录
+            </button>
+          </div>
+        )}
       </main>
 
-      {/* 生成晨报按钮：右下角小型悬浮按钮，图标为主，hover 出文字提示 */}
-      <div className="fixed bottom-6 right-6 z-20 group">
+      {/* 生成晨报按钮：右下角小型悬浮按钮。手机端仅在「回望」页显示，避免遮挡其它页内容 */}
+      {(!isMobile || mobileTab === 'reflect') && (
+      <div className={cn('fixed bottom-6 right-6 z-20 group', isMobile && 'mobile-fab-up')}>
         <Button
           onClick={handleGenerateReport}
           disabled={isGenerating}
@@ -1288,6 +1437,22 @@ const Home = () => {
           生成今日晨报
         </span>
       </div>
+      )}
+
+      {/* 手机端底部导航 */}
+      {isMobile && (
+        <MobileTabBar
+          active={mobileTab}
+          onChange={(tab) => {
+            setMobileTab(tab);
+            haptic(8);
+            // 切到记录页时自动聚焦输入框，实现"打开就能写"
+            if (tab === 'record') {
+              window.setTimeout(() => textareaRef.current?.focus(), 80);
+            }
+          }}
+        />
+      )}
 
       {/* 生成中遮罩：三阶段仪式动效 */}
       {isGenerating && (
