@@ -775,8 +775,13 @@
   position: absolute;
   left: 50%;
   top: 50%;
+  /* 居中交给负 margin，不依赖 transform：
+     旧写法把 translate(-50%,-50%) 塞进 transform，中间帧一旦缺失该属性，
+     浏览器会重置 transform → 圈跳到右下。剥离后圆心永远固定。 */
   width: 150px;
   height: 150px;
+  margin-left: -75px;
+  margin-top: -75px;
   border-radius: 50%;
   border: 1px solid hsl(var(--cinnabar) / 0.4);
   box-shadow: inset 0 0 24px hsl(var(--season-accent) / 0.12);
@@ -785,9 +790,10 @@
 }
 
 @keyframes ritual-ring {
-  0% { transform: translate(-50%, -50%) scale(0.55); opacity: 0; }
-  20% { opacity: 0.6; }
-  100% { transform: translate(-50%, -50%) scale(1.9); opacity: 0; }
+  /* 每一帧都写全 transform（只做 scale），不漏帧，避免浏览器重置变换 */
+  0% { transform: scale(0.55); opacity: 0; }
+  20% { transform: scale(0.85); opacity: 0.6; }
+  100% { transform: scale(1.9); opacity: 0; }
 }
 
 .ritual-stage {
