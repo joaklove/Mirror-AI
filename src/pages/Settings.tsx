@@ -22,6 +22,7 @@ import { InkBackground } from '@/components/InkBackground';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/hooks/useTheme';
 import { useTranslation } from 'react-i18next';
+import AISettings from '@/components/AISettings';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -198,7 +199,11 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <div className="mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="mt-6">
+          <AISettings />
+        </div>
+
+        <div className="mb-6 mt-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
           <h2 
             className="text-sm font-medium mb-3"
             style={{ color: 'hsl(var(--ink-green))' }}
